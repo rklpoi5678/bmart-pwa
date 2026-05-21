@@ -3,7 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
-import { getApiUrl } from '@/lib/api';
+import { isLoggedIn, clearToken, getToken } from '@/lib/auth';
+import {
+  loginAccount,
+  logoutAccount,
+  registerAccount,
+  fetchCurrentUser,
+  fetchAccounts,
+  deleteAccount,
+} from '@/lib/api';
 
 interface Account {
   id: number;
@@ -13,108 +21,250 @@ interface Account {
 
 export default function AccountsPage() {
   const router = useRouter();
-  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  // Auth state
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+
+  // Form state
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [qrData, setQrData] = useState<{ username: string; qrId: string; qrPw: string } | null>(null);
-  const [qrImage, setQrImage] = useState('');
   const [error, setError] = useState('');
 
-  const apiUrl = getApiUrl();
+  // Data state
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [qrData, setQrData] = useState<{ username: string; qrId: string; qrPw: string } | null>(null);
 
   const loadAccounts = useCallback(async () => {
-    if (!apiUrl) return;
-    try {
-      const res = await fetch(`${apiUrl}/api/account/list`);
-      const data = await res.json();
-      if (data.ok) setAccounts(data.accounts);
-    } catch { /* offline */ }
-  }, [apiUrl]);
+    const list = await fetchAccounts();
+    setAccounts(list);
+  }, []);
 
-  useEffect(() => { loadAccounts(); }, [loadAccounts]);
+  useEffect(() => {
+    if (isLoggedIn()) {
+      setLoggedIn(true);
+      fetchCurrentUser().then((u) => {
+        if (u) setCurrentUser(u.username);
+        else { clearToken(); setLoggedIn(false); }
+      });
+      loadAccounts();
+    }
+  }, [loadAccounts]);
 
-  const handleRegister = async () => {
-    if (!apiUrl) { setError('설정에서 서버 주소를 먼저 입력하세요'); return; }
+  const handleLogin = async () => {
     if (!username || !password) { setError('아이디와 비밀번호를 입력하세요'); return; }
-
     setLoading(true);
     setError('');
-    try {
-      const res = await fetch(`${apiUrl}/api/account/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        const qrId = await QRCode.toDataURL(username, { width: 200, margin: 1 });
-        const qrPw = await QRCode.toDataURL(password, { width: 200, margin: 1 });
-        setQrData({ username, qrId, qrPw });
-        setUsername('');
-        setPassword('');
-        loadAccounts();
-      } else {
-        setError(data.error || '등록 실패');
-      }
-    } catch {
-      setError('서버 연결 실패');
+    const result = await loginAccount(username, password, rememberMe);
+    if (result.ok) {
+      setLoggedIn(true);
+      setCurrentUser(result.username!);
+      setUsername('');
+      setPassword('');
+      loadAccounts();
+    } else {
+      setError(result.error || '로그인 실패');
     }
     setLoading(false);
   };
 
+  const handleRegister = async () => {
+    if (!username || !password) { setError('아이디와 비밀번호를 입력하세요'); return; }
+    setLoading(true);
+    setError('');
+    const result = await registerAccount(username, password);
+    if (result.ok) {
+      setLoggedIn(true);
+      setCurrentUser(result.username!);
+      const qrId = await QRCode.toDataURL(username, { width: 200, margin: 1 });
+      const qrPw = await QRCode.toDataURL(password, { width: 200, margin: 1 });
+      setQrData({ username, qrId, qrPw });
+      setUsername('');
+      setPassword('');
+      loadAccounts();
+    } else {
+      setError(result.error || '등록 실패');
+    }
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await logoutAccount();
+    setLoggedIn(false);
+    setCurrentUser(null);
+    setAccounts([]);
+    setQrData(null);
+  };
+
   const handleDelete = async (name: string) => {
     if (!confirm(`"${name}" 계정을 삭제하시겠습니까?`)) return;
-    await fetch(`${apiUrl}/api/account/delete`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: name }),
-    });
+    await deleteAccount(name);
     loadAccounts();
   };
 
+  const handleShowQr = async (acc: Account) => {
+    // QR codes are generated from the stored username — password QR needs the password
+    // which we don't have after login. Show username QR + prompt for password.
+    const pw = prompt(`${acc.username} 비밀번호 입력`);
+    if (!pw) return;
+    const qrId = await QRCode.toDataURL(acc.username, { width: 200, margin: 1 });
+    const qrPw = await QRCode.toDataURL(pw, { width: 200, margin: 1 });
+    setQrData({ username: acc.username, qrId, qrPw });
+  };
+
+  const handleAddAccount = async () => {
+    if (!username || !password) { setError('아이디와 비밀번호를 입력하세요'); return; }
+    setLoading(true);
+    setError('');
+    const result = await registerAccount(username, password);
+    if (result.ok) {
+      const qrId = await QRCode.toDataURL(username, { width: 200, margin: 1 });
+      const qrPw = await QRCode.toDataURL(password, { width: 200, margin: 1 });
+      setQrData({ username, qrId, qrPw });
+      setUsername('');
+      setPassword('');
+      loadAccounts();
+    } else {
+      setError(result.error || '등록 실패');
+    }
+    setLoading(false);
+  };
+
+  // === Not Logged In ===
+  if (!loggedIn) {
+    return (
+      <div className="min-h-screen bg-surface p-4 pb-20">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => router.back()} className="text-2xl">←</button>
+          <h1 className="text-xl font-semibold text-ink">계정</h1>
+        </div>
+
+        {/* Tab Toggle */}
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={() => { setAuthMode('login'); setError(''); }}
+            className={`flex-1 py-3 rounded-lg font-medium border-2 ${
+              authMode === 'login'
+                ? 'border-primary bg-card-tint-lavender text-primary'
+                : 'border-hairline text-slate'
+            }`}
+          >
+            로그인
+          </button>
+          <button
+            onClick={() => { setAuthMode('register'); setError(''); }}
+            className={`flex-1 py-3 rounded-lg font-medium border-2 ${
+              authMode === 'register'
+                ? 'border-primary bg-card-tint-lavender text-primary'
+                : 'border-hairline text-slate'
+            }`}
+          >
+            회원가입
+          </button>
+        </div>
+
+        <div className="bg-canvas rounded-xl border border-hairline p-4 space-y-3">
+          <h2 className="font-semibold text-ink">
+            {authMode === 'login' ? '로그인' : '회원가입'}
+          </h2>
+          <div>
+            <label className="block text-sm text-slate mb-1">아이디</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base font-mono bg-canvas text-ink"
+              placeholder="아이디 입력"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') authMode === 'login' ? handleLogin() : handleRegister(); }}
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-slate mb-1">비밀번호</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
+              placeholder="비밀번호 입력"
+              onKeyDown={(e) => { if (e.key === 'Enter') authMode === 'login' ? handleLogin() : handleRegister(); }}
+            />
+          </div>
+
+          {authMode === 'login' && (
+            <label className="flex items-center gap-2 text-sm text-slate cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded accent-primary"
+              />
+              로그인 유지
+            </label>
+          )}
+
+          {error && <p className="text-sm text-error">{error}</p>}
+
+          <button
+            onClick={authMode === 'login' ? handleLogin : handleRegister}
+            disabled={loading}
+            className="w-full bg-primary text-on-dark rounded-lg py-3 font-medium disabled:opacity-50"
+          >
+            {loading ? '처리 중...' : authMode === 'login' ? '로그인' : '회원가입'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // === Logged In ===
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-20">
+    <div className="min-h-screen bg-surface p-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.back()} className="text-2xl">←</button>
-        <h1 className="text-xl font-bold">계정 등록</h1>
+        <h1 className="text-xl font-semibold text-ink">계정</h1>
+        <div className="flex-1" />
+        <span className="text-sm text-slate">{currentUser}</span>
+        <button
+          onClick={handleLogout}
+          className="text-sm text-error font-medium"
+        >
+          로그아웃
+        </button>
       </div>
 
-      {!apiUrl && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-          <p className="text-sm text-yellow-800">서버 주소가 설정되지 않았습니다. 설정에서 자동 전송 모드의 서버 주소를 먼저 입력하세요.</p>
-        </div>
-      )}
-
-      {/* Registration Form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3 mb-6">
-        <h2 className="font-bold">새 계정 등록</h2>
+      {/* Add Account Form */}
+      <div className="bg-canvas rounded-xl border border-hairline p-4 space-y-3 mb-6">
+        <h2 className="font-semibold text-ink">새 계정 등록</h2>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">아이디</label>
+          <label className="block text-sm text-slate mb-1">아이디</label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-mono"
-            placeholder="audit_2026038"
+            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base font-mono bg-canvas text-ink"
+            placeholder="audit_2026039"
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">비밀번호</label>
+          <label className="block text-sm text-slate mb-1">비밀번호</label>
           <input
             type="text"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-mono"
-            placeholder="audit_2026038"
+            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base font-mono bg-canvas text-ink"
+            placeholder="audit_2026039"
           />
-          <p className="text-xs text-gray-400 mt-1">아이디와 동일하게 설정 권장</p>
+          <p className="text-xs text-steel mt-1">아이디와 동일하게 설정 권장</p>
         </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-error">{error}</p>}
         <button
-          onClick={handleRegister}
+          onClick={handleAddAccount}
           disabled={loading}
-          className="w-full bg-blue-600 text-white rounded-lg py-3 font-medium disabled:opacity-50"
+          className="w-full bg-primary text-on-dark rounded-lg py-3 font-medium disabled:opacity-50"
         >
           {loading ? '등록 중...' : '등록 + QR 생성'}
         </button>
@@ -122,22 +272,22 @@ export default function AccountsPage() {
 
       {/* QR Display */}
       {qrData && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <h2 className="font-bold mb-3">QR 코드 — {qrData.username}</h2>
+        <div className="bg-canvas rounded-xl border border-hairline p-4 mb-6">
+          <h2 className="font-semibold text-ink mb-3">QR 코드 — {qrData.username}</h2>
           <div className="flex gap-4 justify-center">
             <div className="text-center">
               <img src={qrData.qrId} alt="ID QR" className="w-40 h-40 mx-auto" />
-              <p className="text-xs text-gray-500 mt-1">아이디</p>
+              <p className="text-xs text-steel mt-1">아이디</p>
             </div>
             <div className="text-center">
               <img src={qrData.qrPw} alt="PW QR" className="w-40 h-40 mx-auto" />
-              <p className="text-xs text-gray-500 mt-1">비밀번호</p>
+              <p className="text-xs text-steel mt-1">비밀번호</p>
             </div>
           </div>
-          <p className="text-xs text-gray-400 text-center mt-3">PDA로 각 QR을 스캔하여 로그인</p>
+          <p className="text-xs text-steel text-center mt-3">PDA로 각 QR을 스캔하여 로그인</p>
           <button
             onClick={() => setQrData(null)}
-            className="w-full mt-3 py-2 text-sm text-gray-400"
+            className="w-full mt-3 py-2 text-sm text-steel"
           >
             닫기
           </button>
@@ -146,27 +296,24 @@ export default function AccountsPage() {
 
       {/* Account List */}
       <div className="space-y-2">
-        <h2 className="font-bold">등록된 계정</h2>
+        <h2 className="font-semibold text-ink">등록된 계정</h2>
         {accounts.length === 0 ? (
-          <p className="text-sm text-gray-400 py-4 text-center">등록된 계정이 없습니다</p>
+          <p className="text-sm text-steel py-4 text-center">등록된 계정이 없습니다</p>
         ) : (
           accounts.map((acc) => (
-            <div key={acc.id} className="bg-white rounded-lg border border-gray-200 p-3 flex items-center justify-between">
+            <div key={acc.id} className="bg-canvas rounded-xl border border-hairline p-3 flex items-center justify-between">
               <div>
-                <p className="font-mono font-medium">{acc.username}</p>
-                <p className="text-xs text-gray-400">{new Date(acc.created_at).toLocaleDateString('ko-KR')}</p>
+                <p className="font-mono font-medium text-ink">{acc.username}</p>
+                <p className="text-xs text-steel">{new Date(acc.created_at).toLocaleDateString('ko-KR')}</p>
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={async () => {
-                    const qrId = await QRCode.toDataURL(acc.username, { width: 200, margin: 1 });
-                    setQrData({ username: acc.username, qrId, qrPw: '' });
-                  }}
-                  className="text-sm text-blue-600 px-2"
+                  onClick={() => handleShowQr(acc)}
+                  className="text-sm text-primary font-medium px-2"
                 >
                   QR
                 </button>
-                <button onClick={() => handleDelete(acc.username)} className="text-sm text-red-500 px-2">
+                <button onClick={() => handleDelete(acc.username)} className="text-sm text-error px-2">
                   삭제
                 </button>
               </div>

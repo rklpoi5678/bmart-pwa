@@ -31,10 +31,10 @@ export default function RackForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-20">
+    <div className="min-h-screen bg-surface p-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.back()} className="text-2xl">←</button>
-        <h1 className="text-xl font-bold">랙검사</h1>
+        <h1 className="text-xl font-semibold text-ink">랙검사</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -44,11 +44,11 @@ export default function RackForm() {
         />
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+          <label className="block text-sm font-medium text-slate mb-1">카테고리</label>
           <select
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
+            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
           >
             {CATEGORY_OPTIONS.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -57,12 +57,12 @@ export default function RackForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">검사 항목</label>
+          <label className="block text-sm font-medium text-slate mb-1">검사 항목</label>
           <textarea
             required
             value={form.items}
             onChange={(e) => setForm({ ...form, items: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
+            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
             rows={3}
             placeholder="검사 내용 입력"
           />
@@ -71,11 +71,11 @@ export default function RackForm() {
         <PhotoCapture photos={photos} onChange={setPhotos} />
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">비고</label>
+          <label className="block text-sm font-medium text-slate mb-1">비고</label>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
+            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
             rows={2}
             placeholder="추가 메모 (선택)"
           />
@@ -84,7 +84,7 @@ export default function RackForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-blue-600 text-white rounded-lg py-3 font-medium text-base disabled:opacity-50"
+          className="w-full bg-primary text-on-dark rounded-lg py-3 font-medium text-base disabled:opacity-50"
         >
           {submitting ? '저장 중...' : '아웃박스에 저장'}
         </button>

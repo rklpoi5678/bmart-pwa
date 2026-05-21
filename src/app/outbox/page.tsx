@@ -37,19 +37,19 @@ export default function OutboxPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3">
+    <div className="min-h-screen bg-surface">
+      <div className="sticky top-0 bg-canvas border-b border-hairline px-4 py-3">
         <div className="flex items-center gap-3 mb-3">
           <button onClick={() => router.push('/')} className="text-2xl">←</button>
-          <h1 className="text-xl font-bold">아웃박스</h1>
+          <h1 className="text-xl font-semibold text-ink">아웃박스</h1>
         </div>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+        <div className="flex gap-1 bg-surface rounded-lg p-1">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 py-1.5 rounded-md text-sm font-medium ${
-                tab === t.key ? 'bg-white shadow text-gray-900' : 'text-gray-500'
+              className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                tab === t.key ? 'bg-canvas shadow text-ink' : 'text-slate'
               }`}
             >
               {t.label}
@@ -60,17 +60,17 @@ export default function OutboxPage() {
 
       <div className="p-4 space-y-3">
         {items.length === 0 ? (
-          <p className="text-center text-gray-400 py-12">항목이 없습니다</p>
+          <p className="text-center text-steel py-12">항목이 없습니다</p>
         ) : (
           items.map((item) => <OutboxCard key={item.id} item={item} onRefresh={load} />)
         )}
       </div>
 
       {items.some((i) => i.status === 'pending') && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-canvas border-t border-hairline max-w-lg mx-auto">
           <button
             onClick={handleShareAll}
-            className="w-full bg-blue-600 text-white rounded-lg py-3 font-medium"
+            className="w-full bg-primary text-on-dark rounded-lg py-3 font-medium"
           >
             {copied ? '공유 완료 ✓' : '대기 항목 전체 공유'}
           </button>

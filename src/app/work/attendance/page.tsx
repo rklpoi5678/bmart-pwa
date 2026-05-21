@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { addToQueue } from '@/lib/queue';
-import type { AttendanceData } from '@/db/schema';
 
 const WORKER_KEY = 'bmark-worker-name';
 const CHECKOUT_HOUR = 12;
@@ -33,7 +32,7 @@ export default function AttendanceForm() {
   const handleSubmit = async (action: 'check-in' | 'check-out') => {
     if (!saved && !workerName.trim()) return;
 
-    if (saved) localStorage.setItem(WORKER_KEY, workerName);
+    if (!saved) localStorage.setItem(WORKER_KEY, workerName);
 
     setSubmitting(true);
     await addToQueue({
@@ -53,46 +52,46 @@ export default function AttendanceForm() {
   const dateStr = now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-20">
+    <div className="min-h-screen bg-surface p-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.back()} className="text-2xl">←</button>
-        <h1 className="text-xl font-bold">출퇴근</h1>
+        <h1 className="text-xl font-semibold text-ink">출퇴근</h1>
       </div>
 
       <div className="text-center mb-6">
-        <p className="text-4xl font-bold font-mono">{timeStr}</p>
-        <p className="text-gray-500 mt-1">{dateStr}</p>
+        <p className="text-4xl font-bold font-mono text-ink">{timeStr}</p>
+        <p className="text-slate mt-1">{dateStr}</p>
       </div>
 
       <div className="space-y-4">
         {!saved ? (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">작업자명 (최초 1회)</label>
+            <label className="block text-sm font-medium text-slate mb-1">작업자명 (최초 1회)</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 required
                 value={workerName}
                 onChange={(e) => setWorkerName(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base"
+                className="flex-1 border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
                 placeholder="이름 입력"
               />
               <button
                 type="button"
                 onClick={() => { if (workerName.trim()) setSaved(true); }}
-                className="bg-gray-200 px-4 rounded-lg text-sm font-medium"
+                className="bg-surface border border-hairline-strong rounded-lg px-4 text-sm font-medium text-ink"
               >
                 확인
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-gray-100 rounded-lg px-3 py-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">{workerName}</span>
+          <div className="bg-surface rounded-lg px-3 py-2 flex items-center justify-between">
+            <span className="text-sm text-charcoal">{workerName}</span>
             <button
               type="button"
               onClick={() => setSaved(false)}
-              className="text-xs text-blue-600"
+              className="text-xs text-link-blue"
             >
               변경
             </button>
@@ -102,7 +101,7 @@ export default function AttendanceForm() {
         <button
           onClick={() => handleSubmit('check-in')}
           disabled={submitting || !saved}
-          className="w-full py-4 rounded-xl font-bold text-lg bg-green-600 text-white disabled:opacity-40 active:scale-[0.98] transition-transform"
+          className="w-full py-4 rounded-xl font-bold text-lg bg-success text-on-dark disabled:opacity-40 active:scale-[0.98] transition-transform"
         >
           출근하기
         </button>
@@ -111,23 +110,23 @@ export default function AttendanceForm() {
           <button
             onClick={() => handleSubmit('check-out')}
             disabled={submitting || !saved || !canCheckOut}
-            className="w-full py-4 rounded-xl font-bold text-lg bg-blue-600 text-white disabled:opacity-40 active:scale-[0.98] transition-transform"
+            className="w-full py-4 rounded-xl font-bold text-lg bg-primary text-on-dark disabled:opacity-40 active:scale-[0.98] transition-transform"
           >
             퇴근하기
           </button>
           {!canCheckOut && (
-            <p className="text-center text-xs text-red-500 mt-1">
+            <p className="text-center text-xs text-error mt-1">
               오후 12:00 이후에 퇴근 가능합니다
             </p>
           )}
         </div>
 
-        <div className="pt-4 border-t border-gray-200">
+        <div className="pt-4 border-t border-hairline">
           <a
             href={GOOGLE_FORM_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full text-center py-3 rounded-lg border-2 border-gray-300 text-gray-600 font-medium"
+            className="block w-full text-center py-3 rounded-lg border-2 border-hairline-strong text-slate font-medium"
           >
             출퇴근 폼 작성 (Google)
           </a>
