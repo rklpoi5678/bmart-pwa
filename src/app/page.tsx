@@ -62,13 +62,27 @@ export default function HomePage() {
       {/* Inspector shortcut */}
       <button
         onClick={() => router.push('/inspector')}
-        className="w-full mb-6 bg-amber-50 border-2 border-amber-200 rounded-xl p-4 text-left active:scale-[0.98] transition-transform"
+        className="w-full mb-3 bg-amber-50 border-2 border-amber-200 rounded-xl p-4 text-left active:scale-[0.98] transition-transform"
       >
         <div className="flex items-center gap-3">
           <span className="text-3xl">📋</span>
           <div>
             <p className="font-bold text-lg">검품기준서</p>
             <p className="text-sm text-gray-500">품목별 검사 기준 조회</p>
+          </div>
+        </div>
+      </button>
+
+      {/* Account management */}
+      <button
+        onClick={() => router.push('/accounts')}
+        className="w-full mb-6 bg-purple-50 border-2 border-purple-200 rounded-xl p-4 text-left active:scale-[0.98] transition-transform"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">🔑</span>
+          <div>
+            <p className="font-bold text-lg">계정 등록</p>
+            <p className="text-sm text-gray-500">QR 로그인 계정 관리</p>
           </div>
         </div>
       </button>
