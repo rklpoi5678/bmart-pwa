@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { compressFile } from '@/lib/compress';
 
 interface PhotoCaptureProps {
   photos: string[];
@@ -11,6 +12,7 @@ interface PhotoCaptureProps {
 export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoCaptureProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const [compressing, setCompressing] = useState(0);
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -21,12 +23,14 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
 
     for (const file of Array.from(files)) {
       if (photos.length + newPhotos.length >= maxPhotos) break;
-      const dataUrl = await readFileAsDataUrl(file);
-      newPhotos.push(dataUrl);
+      setCompressing(newPhotos.length + 1);
+      const compressed = await compressFile(file);
+      newPhotos.push(compressed);
     }
 
     onChange([...photos, ...newPhotos]);
     setLoading(false);
+    setCompressing(0);
     if (inputRef.current) inputRef.current.value = '';
   };
 
@@ -57,7 +61,7 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
             disabled={loading}
             className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-gray-400"
           >
-            {loading ? '...' : '+'}
+            {loading ? `${compressing}...` : '+'}
           </button>
         )}
       </div>
@@ -72,13 +76,4 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
       />
     </div>
   );
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
