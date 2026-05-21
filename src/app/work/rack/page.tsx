@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PhotoCapture from '@/components/PhotoCapture';
+import RackNumberInput from '@/components/RackNumberInput';
 import { addToQueue } from '@/lib/queue';
 import { CATEGORY_OPTIONS } from '@/db/schema';
 import type { RackData } from '@/db/schema';
@@ -37,17 +38,10 @@ export default function RackForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">랙번호</label>
-          <input
-            type="text"
-            required
-            value={form.rackNumber}
-            onChange={(e) => setForm({ ...form, rackNumber: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
-            placeholder="예: A-12"
-          />
-        </div>
+        <RackNumberInput
+          value={form.rackNumber}
+          onChange={(v) => setForm({ ...form, rackNumber: v })}
+        />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
