@@ -5,6 +5,7 @@ import { TYPE_LABELS } from '@/db/schema';
 import StatusBadge from './StatusBadge';
 import { copyToClipboard } from '@/lib/clipboard';
 import { deleteItem, updateItemStatus } from '@/lib/queue';
+import { getMode, submitToApi } from '@/lib/api';
 import { useState } from 'react';
 
 interface OutboxCardProps {
@@ -13,15 +14,34 @@ interface OutboxCardProps {
 }
 
 export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
-  const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const mode = getMode();
 
   const handleCopy = async () => {
     const ok = await copyToClipboard(item);
     if (ok) {
-      setCopied(true);
       await updateItemStatus(item.id!, 'sent');
-      setTimeout(() => { setCopied(false); onRefresh(); }, 1000);
+      onRefresh();
     }
+  };
+
+  const handleApiSend = async () => {
+    setSending(true);
+    const result = await submitToApi({
+      type: item.type,
+      target: item.target,
+      data: item.data as unknown as Record<string, unknown>,
+      note: item.note,
+      photos: item.photos,
+    });
+    if (result.ok) {
+      await updateItemStatus(item.id!, 'sent');
+    } else {
+      await updateItemStatus(item.id!, 'failed', result.error);
+    }
+    setSending(false);
+    onRefresh();
   };
 
   const handleDelete = async () => {
@@ -40,6 +60,7 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
         {new Date(item.createdAt).toLocaleString('ko-KR')}
       </p>
       {item.note && <p className="text-sm text-gray-700">{item.note}</p>}
+      {item.error && <p className="text-sm text-red-500">{item.error}</p>}
       {item.photos.length > 0 && (
         <div className="flex gap-1">
           {item.photos.slice(0, 3).map((p, i) => (
@@ -54,8 +75,25 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
       )}
       <div className="flex gap-2 pt-1">
         {item.status === 'pending' && (
-          <button onClick={handleCopy} className="flex-1 text-sm bg-blue-500 text-white rounded py-1.5">
-            {copied ? '복사됨 ✓' : '클립보드 복사'}
+          <>
+            {mode === 'local' ? (
+              <button onClick={handleCopy} className="flex-1 text-sm bg-blue-500 text-white rounded py-1.5">
+                클립보드 복사
+              </button>
+            ) : (
+              <button
+                onClick={handleApiSend}
+                disabled={sending}
+                className="flex-1 text-sm bg-blue-500 text-white rounded py-1.5 disabled:opacity-50"
+              >
+                {sending ? '전송 중...' : 'API 전송'}
+              </button>
+            )}
+          </>
+        )}
+        {item.status === 'failed' && mode === 'api' && (
+          <button onClick={handleApiSend} disabled={sending} className="flex-1 text-sm bg-orange-500 text-white rounded py-1.5">
+            {sending ? '재시도 중...' : '재시도'}
           </button>
         )}
         <button onClick={handleDelete} className="text-sm text-red-500 px-2">삭제</button>
