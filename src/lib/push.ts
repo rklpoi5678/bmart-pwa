@@ -65,13 +65,15 @@ export async function isSubscribed(): Promise<boolean> {
   return sub !== null;
 }
 
+import { WORKER_URL } from './auth';
+
 // Register subscription with backend
-export async function registerSubscription(apiUrl: string): Promise<boolean> {
+export async function registerSubscription(): Promise<boolean> {
   const sub = await getSubscription();
-  if (!sub || !apiUrl) return false;
+  if (!sub) return false;
 
   try {
-    const res = await fetch(`${apiUrl}/api/push/subscribe`, {
+    const res = await fetch(`${WORKER_URL}/api/push/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(sub.toJSON()),
