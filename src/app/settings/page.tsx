@@ -9,8 +9,6 @@ import {
   subscribe,
   unsubscribe,
   isSubscribed,
-  setVapidKey,
-  getVapidKey,
   registerSubscription,
 } from '@/lib/push';
 
@@ -18,7 +16,6 @@ export default function SettingsPage() {
   const router = useRouter();
   const [mode, setModeState] = useState<AppMode>('local');
   const [apiUrl, setApiUrlState] = useState('');
-  const [vapidKey, setVapidKeyState] = useState('');
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -27,7 +24,6 @@ export default function SettingsPage() {
   useEffect(() => {
     setModeState(getMode());
     setApiUrlState(getApiUrl());
-    setVapidKeyState(getVapidKey());
     isPushSupported().then(setPushSupported);
     isSubscribed().then(setPushEnabled);
   }, []);
@@ -35,7 +31,6 @@ export default function SettingsPage() {
   const handleSave = () => {
     setMode(mode);
     setApiUrl(apiUrl);
-    setVapidKey(vapidKey);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
@@ -51,7 +46,6 @@ export default function SettingsPage() {
         setPushLoading(false);
         return;
       }
-      setVapidKey(vapidKey);
       const sub = await subscribe();
       if (sub && apiUrl) {
         await registerSubscription(apiUrl);
@@ -71,7 +65,7 @@ export default function SettingsPage() {
       <div className="space-y-6">
         {/* Mode Toggle */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">연동 모드</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">전송 방식</label>
           <div className="flex gap-3">
             <button
               onClick={() => setModeState('local')}
@@ -81,7 +75,7 @@ export default function SettingsPage() {
                   : 'border-gray-200 text-gray-500'
               }`}
             >
-              로컬 모드
+              수동 복사
             </button>
             <button
               onClick={() => setModeState('api')}
@@ -91,20 +85,20 @@ export default function SettingsPage() {
                   : 'border-gray-200 text-gray-500'
               }`}
             >
-              API 모드
+              자동 전송
             </button>
           </div>
           <p className="text-xs text-gray-400 mt-2">
             {mode === 'local'
-              ? '클립보드에 복사하여 수동 전송합니다'
-              : 'Cloudflare Workers를 통해 자동 전송합니다'}
+              ? '텍스트를 복사해서 Slack이나 Sheets에 직접 붙여넣기'
+              : '저장된 항목을 서버로 자동 전송'}
           </p>
         </div>
 
         {/* API URL */}
         {mode === 'api' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">API 서버 주소</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">서버 주소</label>
             <input
               type="url"
               value={apiUrl}
@@ -136,16 +130,6 @@ export default function SettingsPage() {
               >
                 {pushLoading ? '처리 중...' : pushEnabled ? '알림 끄기' : '알림 켜기'}
               </button>
-              <div className="mt-3">
-                <label className="block text-xs text-gray-500 mb-1">VAPID 공개키</label>
-                <input
-                  type="text"
-                  value={vapidKey}
-                  onChange={(e) => setVapidKeyState(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono"
-                  placeholder="BEl62iUYgU..."
-                />
-              </div>
             </>
           )}
         </div>
