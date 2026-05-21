@@ -50,9 +50,12 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold">B-Mark</h1>
           <p className="text-sm text-gray-500">품질지킴이</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`} />
-          <span className="text-xs text-gray-500">{isOnline ? '온라인' : '오프라인'}</span>
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push('/settings')} className="text-lg">⚙️</button>
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`} />
+            <span className="text-xs text-gray-500">{isOnline ? '온라인' : '오프라인'}</span>
+          </div>
         </div>
       </div>
 
