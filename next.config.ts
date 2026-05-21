@@ -3,6 +3,10 @@ import withSerwist from "@serwist/next";
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  output: "export",
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default withSerwist({
