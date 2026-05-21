@@ -14,6 +14,51 @@ interface QueuePayload {
   timestamp: string;
 }
 
+// === Auth Utilities ===
+
+function generateToken(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function getAuthUser(request: Request, env: Env): Promise<{ username: string } | null> {
+  const auth = request.headers.get('Authorization');
+  if (!auth || !auth.startsWith('Bearer ')) return null;
+  const token = auth.slice(7);
+  const row = await env.DB.prepare(
+    'SELECT username, expires_at FROM sessions WHERE token = ?'
+  ).bind(token).first<{ username: string; expires_at: number }>();
+  if (!row) return null;
+  if (Date.now() > row.expires_at) {
+    await env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(token).run();
+    return null;
+  }
+  return { username: row.username };
+}
+
+async function requireAuth(request: Request, env: Env): Promise<{ username: string } | Response> {
+  const user = await getAuthUser(request, env);
+  if (!user) {
+    return new Response(JSON.stringify({ error: '인증이 필요합니다' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  }
+  return user;
+}
+
+// === DB Migration ===
+
+async function migrate(env: Env): Promise<void> {
+  await env.DB.exec(`CREATE TABLE IF NOT EXISTS sessions (
+    token TEXT PRIMARY KEY,
+    username TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+  )`);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const headers = {
@@ -30,6 +75,8 @@ export default {
     const url = new URL(request.url);
 
     try {
+      await migrate(env);
+
       // === Account (QR Login) Routes ===
 
       if (url.pathname === '/api/account/register' && request.method === 'POST') {
@@ -46,16 +93,68 @@ export default {
         const hash = await hashPassword(password);
         await env.DB.prepare('INSERT INTO accounts (username, password_hash) VALUES (?, ?)').bind(username, hash).run();
 
-        return new Response(JSON.stringify({ ok: true, username }), { headers });
+        // Auto-login after register
+        const token = generateToken();
+        const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        await env.DB.prepare(
+          'INSERT INTO sessions (token, username, expires_at, created_at) VALUES (?, ?, ?, ?)'
+        ).bind(token, username, expiresAt, Date.now()).run();
+
+        return new Response(JSON.stringify({ ok: true, username, token }), { headers });
+      }
+
+      if (url.pathname === '/api/account/login' && request.method === 'POST') {
+        const { username, password, rememberMe } = await request.json() as { username: string; password: string; rememberMe?: boolean };
+        if (!username || !password) {
+          return new Response(JSON.stringify({ error: 'username, password required' }), { status: 400, headers });
+        }
+        const row = await env.DB.prepare('SELECT password_hash FROM accounts WHERE username = ?').bind(username).first<{ password_hash: string }>();
+        if (!row) {
+          return new Response(JSON.stringify({ ok: false, error: '계정을 찾을 수 없습니다' }), { status: 404, headers });
+        }
+        const valid = await verifyPassword(password, row.password_hash);
+        if (!valid) {
+          return new Response(JSON.stringify({ ok: false, error: '비밀번호가 일치하지 않습니다' }), { status: 401, headers });
+        }
+        const token = generateToken();
+        const days = rememberMe ? 30 : 7;
+        const expiresAt = Date.now() + days * 24 * 60 * 60 * 1000;
+        await env.DB.prepare(
+          'INSERT OR REPLACE INTO sessions (token, username, expires_at, created_at) VALUES (?, ?, ?, ?)'
+        ).bind(token, username, expiresAt, Date.now()).run();
+        return new Response(JSON.stringify({ ok: true, username, token }), { headers });
+      }
+
+      if (url.pathname === '/api/account/logout' && request.method === 'POST') {
+        const auth = request.headers.get('Authorization');
+        if (auth && auth.startsWith('Bearer ')) {
+          await env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(auth.slice(7)).run();
+        }
+        return new Response(JSON.stringify({ ok: true }), { headers });
+      }
+
+      if (url.pathname === '/api/account/me' && request.method === 'GET') {
+        const authResult = await requireAuth(request, env);
+        if (authResult instanceof Response) return authResult;
+        return new Response(JSON.stringify({ ok: true, username: authResult.username }), { headers });
       }
 
       if (url.pathname === '/api/account/list' && request.method === 'GET') {
-        const rows = await env.DB.prepare('SELECT id, username, created_at FROM accounts ORDER BY created_at DESC').all();
+        const authResult = await requireAuth(request, env);
+        if (authResult instanceof Response) return authResult;
+        const rows = await env.DB.prepare(
+          'SELECT id, username, created_at FROM accounts WHERE username = ? ORDER BY created_at DESC'
+        ).bind(authResult.username).all();
         return new Response(JSON.stringify({ ok: true, accounts: rows.results }), { headers });
       }
 
       if (url.pathname === '/api/account/delete' && request.method === 'POST') {
+        const authResult = await requireAuth(request, env);
+        if (authResult instanceof Response) return authResult;
         const { username } = await request.json() as { username: string };
+        if (username !== authResult.username) {
+          return new Response(JSON.stringify({ error: '자신의 계정만 삭제할 수 있습니다' }), { status: 403, headers });
+        }
         await env.DB.prepare('DELETE FROM accounts WHERE username = ?').bind(username).run();
         return new Response(JSON.stringify({ ok: true }), { headers });
       }
