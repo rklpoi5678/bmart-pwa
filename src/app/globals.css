@@ -1,16 +1,87 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #f9fafb;
-  --color-foreground: #111827;
+  /* Brand & Primary */
+  --color-primary: #6B5CE7;
+  --color-primary-pressed: #5A4ED4;
+  --color-primary-deep: #4A3DBF;
+  --color-brand-navy: #0F1115;
+  --color-brand-navy-deep: #0A0B0E;
+  --color-brand-navy-mid: #1A1D25;
+  --color-link-blue: #2383E2;
+  --color-link-blue-pressed: #1A6BC0;
+
+  /* Brand Color Spectrum */
+  --color-brand-pink: #E255A5;
+  --color-brand-pink-deep: #C7448F;
+  --color-brand-orange: #F37C4B;
+  --color-brand-orange-deep: #D96A3A;
+  --color-brand-purple: #8B5CF6;
+  --color-brand-purple-300: #C4B5FD;
+  --color-brand-purple-800: #5B21B6;
+  --color-brand-teal: #14B8A6;
+  --color-brand-green: #22C55E;
+  --color-brand-yellow: #EAB308;
+  --color-brand-brown: #92400E;
+
+  /* Card Tints */
+  --color-card-tint-peach: #FEF2F2;
+  --color-card-tint-rose: #FFF1F2;
+  --color-card-tint-mint: #ECFDF5;
+  --color-card-tint-lavender: #F5F3FF;
+  --color-card-tint-sky: #F0F9FF;
+  --color-card-tint-yellow: #FEFCE8;
+  --color-card-tint-yellow-bold: #FEF08A;
+  --color-card-tint-cream: #FFF9F0;
+  --color-card-tint-gray: #F7F6F5;
+
+  /* Surface */
+  --color-canvas: #FFFFFF;
+  --color-surface: #F7F6F5;
+  --color-surface-soft: #F2F1F0;
+  --color-hairline: #E8E7E6;
+  --color-hairline-soft: #EFEEED;
+  --color-hairline-strong: #D9D8D6;
+
+  /* Text */
+  --color-ink-deep: #000000;
+  --color-ink: #1A1D25;
+  --color-charcoal: #37352F;
+  --color-slate: #6B6B6B;
+  --color-steel: #9B9A97;
+  --color-stone: #B0AFAC;
+  --color-muted: #C1C0BD;
+  --color-on-dark: #FFFFFF;
+  --color-on-dark-muted: rgba(255, 255, 255, 0.6);
+
+  /* Semantic */
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+
+  /* Border Radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-xxl: 20px;
+  --radius-xxxl: 24px;
+  --radius-full: 9999px;
+
+  /* Font Family */
+  --font-sans: "Notion Sans", Inter, -apple-system, system-ui, "Segoe UI", Helvetica, sans-serif;
+}
+
+/* Base */
+html {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background-color: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
-  -webkit-tap-highlight-color: transparent;
-}
-
-input, select, textarea {
-  font-size: 16px !important;
+  min-height: 100dvh;
 }
