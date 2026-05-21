@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Step {
   title: string;
@@ -27,18 +27,32 @@ const STEPS: Step[] = [
   {
     icon: '📤',
     title: '나가서 전송',
-    desc: '작업 종료 후 네트워크가 복구되면 아웃박스에서 클립보드로 복사하세요.',
+    desc: '작업 종료 후 네트워크가 복구되면 아웃박스에서 복사해서 Slack에 붙여넣으세요.',
+  },
+  {
+    icon: '📱',
+    title: '홈 화면에 추가',
+    desc: 'Safari에서 공유 버튼 → "홈 화면에 추가"를 누르면 앱처럼 사용할 수 있고, 오프라인과 알림이 지원됩니다.',
   },
 ];
 
 export default function OnboardingModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
+  }, []);
+
   const isLast = step === STEPS.length - 1;
 
+  const installDesc = isIOS
+    ? 'Safari 하단 공유 버튼 → "홈 화면에 추가" → 추가'
+    : '브라우저 메뉴에서 "홈 화면에 추가"를 선택하세요.';
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 pb-8">
-        {/* Progress dots */}
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-md rounded-2xl p-6 pb-8">
         <div className="flex justify-center gap-2 mb-6">
           {STEPS.map((_, i) => (
             <span
@@ -50,14 +64,14 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        {/* Content */}
         <div className="text-center mb-8">
           <span className="text-6xl block mb-4">{STEPS[step].icon}</span>
           <h2 className="text-xl font-bold mb-3">{STEPS[step].title}</h2>
-          <p className="text-gray-600 leading-relaxed">{STEPS[step].desc}</p>
+          <p className="text-gray-600 leading-relaxed text-base">
+            {step === STEPS.length - 1 ? installDesc : STEPS[step].desc}
+          </p>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3">
           {step > 0 && (
             <button
@@ -82,7 +96,6 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Skip */}
         {!isLast && (
           <button
             onClick={() => {

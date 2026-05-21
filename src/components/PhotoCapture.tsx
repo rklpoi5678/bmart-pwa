@@ -69,7 +69,6 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         multiple
         onChange={handleFiles}
         className="hidden"

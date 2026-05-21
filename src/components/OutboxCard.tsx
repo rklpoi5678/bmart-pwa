@@ -3,7 +3,7 @@
 import type { QueueItem } from '@/db/schema';
 import { TYPE_LABELS } from '@/db/schema';
 import StatusBadge from './StatusBadge';
-import { copyToClipboard } from '@/lib/clipboard';
+import { shareItem } from '@/lib/share';
 import { deleteItem, updateItemStatus } from '@/lib/queue';
 import { getMode, submitToApi } from '@/lib/api';
 import { useState } from 'react';
@@ -18,8 +18,8 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
 
   const mode = getMode();
 
-  const handleCopy = async () => {
-    const ok = await copyToClipboard(item);
+  const handleShare = async () => {
+    const ok = await shareItem(item);
     if (ok) {
       await updateItemStatus(item.id!, 'sent');
       onRefresh();
@@ -77,8 +77,8 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
         {item.status === 'pending' && (
           <>
             {mode === 'local' ? (
-              <button onClick={handleCopy} className="flex-1 text-sm bg-blue-500 text-white rounded py-1.5">
-                클립보드 복사
+              <button onClick={handleShare} className="flex-1 text-sm bg-blue-500 text-white rounded py-1.5">
+                Slack으로 공유
               </button>
             ) : (
               <button
@@ -86,7 +86,7 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
                 disabled={sending}
                 className="flex-1 text-sm bg-blue-500 text-white rounded py-1.5 disabled:opacity-50"
               >
-                {sending ? '전송 중...' : 'API 전송'}
+                {sending ? '전송 중...' : '서버로 전송'}
               </button>
             )}
           </>
