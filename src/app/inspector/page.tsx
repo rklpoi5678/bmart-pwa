@@ -65,6 +65,14 @@ export default function InspectorPage() {
 
       {/* Results */}
       <div className="p-4 space-y-3">
+        <a
+          href="https://drive.google.com/drive/u/2/folders/19K39pgKuojPHyEZNqQFutY0anhZkBDgd"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700 text-center"
+        >
+          전체 검품기준표 보기 (Google Drive)
+        </a>
         <p className="text-sm text-gray-500">{results.length}개 항목</p>
         {results.map((item) => (
           <InspectorCard key={item.id} item={item} />
