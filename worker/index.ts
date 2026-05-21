@@ -3,10 +3,7 @@ export interface Env {
   GOOGLE_SHEETS_ID: string;
   GOOGLE_SERVICE_ACCOUNT_EMAIL: string;
   GOOGLE_PRIVATE_KEY: string;
-  PUSH_SUBSCRIPTIONS: KVNamespace;
-  VAPID_PRIVATE_KEY: string;
-  VAPID_PUBLIC_KEY: string;
-  VAPID_SUBJECT: string;
+  DB: D1Database;
 }
 
 interface QueuePayload {
@@ -18,53 +15,65 @@ interface QueuePayload {
 }
 
 export default {
-  // Cron trigger: shift reminders
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil((async () => {
-      const hour = new Date().getHours();
-      const isMorning = hour === 8;
-      const notification = isMorning
-        ? { title: 'B-Mark 출근 알림', body: '출근 시간입니다. 출퇴근을 기록하세요.', url: '/work/attendance' }
-        : { title: 'B-Mark 퇴근 알림', body: '퇴근 시간입니다. 아웃박스를 확인하세요.', url: '/outbox' };
-      await broadcastPush(env, notification);
-    })());
-  },
-
   async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      });
-    }
+    const headers = {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
 
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 });
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers });
     }
 
     const url = new URL(request.url);
 
     try {
-      // Push subscription registration
-      if (url.pathname === '/api/push/subscribe') {
-        const sub = await request.json() as { endpoint: string; keys: { p256dh: string; auth: string } };
-        const id = crypto.randomUUID();
-        await env.PUSH_SUBSCRIPTIONS.put(id, JSON.stringify(sub));
-        return new Response(JSON.stringify({ ok: true, id }), {
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        });
+      // === Account (QR Login) Routes ===
+
+      if (url.pathname === '/api/account/register' && request.method === 'POST') {
+        const { username, password } = await request.json() as { username: string; password: string };
+        if (!username || !password) {
+          return new Response(JSON.stringify({ error: 'username, password required' }), { status: 400, headers });
+        }
+
+        const existing = await env.DB.prepare('SELECT id FROM accounts WHERE username = ?').bind(username).first();
+        if (existing) {
+          return new Response(JSON.stringify({ error: '이미 등록된 계정입니다' }), { status: 409, headers });
+        }
+
+        const hash = await hashPassword(password);
+        await env.DB.prepare('INSERT INTO accounts (username, password_hash) VALUES (?, ?)').bind(username, hash).run();
+
+        return new Response(JSON.stringify({ ok: true, username }), { headers });
       }
 
-      // Push notification trigger (called by cron or external)
-      if (url.pathname === '/api/push/send') {
-        const body = await request.json() as { title: string; body: string; url?: string };
-        const sent = await broadcastPush(env, body);
-        return new Response(JSON.stringify({ ok: true, sent }), {
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        });
+      if (url.pathname === '/api/account/list' && request.method === 'GET') {
+        const rows = await env.DB.prepare('SELECT id, username, created_at FROM accounts ORDER BY created_at DESC').all();
+        return new Response(JSON.stringify({ ok: true, accounts: rows.results }), { headers });
+      }
+
+      if (url.pathname === '/api/account/delete' && request.method === 'POST') {
+        const { username } = await request.json() as { username: string };
+        await env.DB.prepare('DELETE FROM accounts WHERE username = ?').bind(username).run();
+        return new Response(JSON.stringify({ ok: true }), { headers });
+      }
+
+      if (url.pathname === '/api/account/verify' && request.method === 'POST') {
+        const { username, password } = await request.json() as { username: string; password: string };
+        const row = await env.DB.prepare('SELECT password_hash FROM accounts WHERE username = ?').bind(username).first<{ password_hash: string }>();
+        if (!row) {
+          return new Response(JSON.stringify({ ok: false, error: '계정을 찾을 수 없습니다' }), { status: 404, headers });
+        }
+        const valid = await verifyPassword(password, row.password_hash);
+        return new Response(JSON.stringify({ ok: valid }), { headers });
+      }
+
+      // === Queue Routes ===
+
+      if (request.method !== 'POST') {
+        return new Response('Method not allowed', { status: 405 });
       }
 
       const payload: QueuePayload = await request.json();
@@ -77,18 +86,55 @@ export default {
         return await sendToSheets(env, payload);
       }
 
-      return new Response(JSON.stringify({ error: 'Unknown target' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return new Response(JSON.stringify({ error: 'Unknown target' }), { status: 400, headers });
     } catch (err) {
-      return new Response(JSON.stringify({ error: String(err) }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers });
     }
   },
 };
+
+// === Password Hashing (Web Crypto API - PBKDF2) ===
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    key,
+    256,
+  );
+  const hashArr = new Uint8Array(bits);
+  const hashStr = Array.from(hashArr).map((b) => b.toString(16).padStart(2, '0')).join('');
+  const saltStr = Array.from(salt).map((b) => b.toString(16).padStart(2, '0')).join('');
+  return `${saltStr}:${hashStr}`;
+}
+
+async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  const [saltStr, expectedHash] = stored.split(':');
+  const salt = new Uint8Array(saltStr.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    key,
+    256,
+  );
+  const hashStr = Array.from(new Uint8Array(bits)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  return hashStr === expectedHash;
+}
+
+// === Slack / Sheets ===
 
 async function sendToSlack(env: Env, payload: QueuePayload): Promise<Response> {
   const text = formatSlackMessage(payload);
@@ -176,26 +222,4 @@ function pemToBuffer(pem: string): ArrayBuffer {
   const buffer = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) buffer[i] = binary.charCodeAt(i);
   return buffer.buffer;
-}
-
-async function broadcastPush(env: Env, notification: { title: string; body: string; url?: string }): Promise<number> {
-  const list = await env.PUSH_SUBSCRIPTIONS.list();
-  let sent = 0;
-
-  for (const key of list.keys) {
-    const raw = await env.PUSH_SUBSCRIPTIONS.get(key.name);
-    if (!raw) continue;
-
-    const sub = JSON.parse(raw) as { endpoint: string; keys: { p256dh: string; auth: string } };
-    try {
-      // Use web push protocol — in production, use a library like `web-push`
-      // For now, just count as sent. Full implementation requires VAPID JWT signing.
-      sent++;
-    } catch {
-      // Subscription expired, remove it
-      await env.PUSH_SUBSCRIPTIONS.delete(key.name);
-    }
-  }
-
-  return sent;
 }

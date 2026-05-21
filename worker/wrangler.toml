@@ -2,16 +2,11 @@ name = "bmark-proxy"
 main = "index.ts"
 compatibility_date = "2024-12-01"
 
-# Run `wrangler kv namespace create PUSH_SUBSCRIPTIONS` then paste the ID below
-[[kv_namespaces]]
-binding = "PUSH_SUBSCRIPTIONS"
-id = "YOUR_KV_NAMESPACE_ID"
-
-# Cron triggers for shift reminders
-# 8:55 AM — 출근 알림
-# 5:55 PM — 퇴근 알림
-[triggers]
-crons = ["55 8 * * *", "55 17 * * *"]
+# D1 Database for account management
+[[d1_databases]]
+binding = "DB"
+database_name = "bmark-accounts"
+database_id = "3e247208-4bf2-43a8-8876-525a84d27096"
 
 [vars]
 # Set these via `wrangler secret put`:
