@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import OutboxCard from '@/components/OutboxCard';
 import { getQueueItems } from '@/lib/queue';
-import { copyAllPending } from '@/lib/clipboard';
+import { shareAllItems } from '@/lib/share';
 import type { QueueItem, QueueItemStatus } from '@/db/schema';
 
 const TABS: { key: QueueItemStatus | 'all'; label: string }[] = [
@@ -27,9 +27,9 @@ export default function OutboxPage() {
 
   useEffect(() => { load(); }, [tab]);
 
-  const handleCopyAll = async () => {
+  const handleShareAll = async () => {
     const allPending = await getQueueItems('pending');
-    const ok = await copyAllPending(allPending);
+    const ok = await shareAllItems(allPending);
     if (ok) {
       setCopied(true);
       setTimeout(() => { setCopied(false); load(); }, 1500);
@@ -69,10 +69,10 @@ export default function OutboxPage() {
       {items.some((i) => i.status === 'pending') && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
           <button
-            onClick={handleCopyAll}
+            onClick={handleShareAll}
             className="w-full bg-blue-600 text-white rounded-lg py-3 font-medium"
           >
-            {copied ? '전체 복사됨 ✓' : '대기 항목 전체 복사'}
+            {copied ? '공유 완료 ✓' : '대기 항목 전체 공유'}
           </button>
         </div>
       )}
