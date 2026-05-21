@@ -40,15 +40,15 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">사진 ({photos.length}/{maxPhotos})</label>
+      <label className="block text-sm font-medium text-slate">사진 ({photos.length}/{maxPhotos})</label>
       <div className="flex gap-2 flex-wrap">
         {photos.map((photo, i) => (
-          <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+          <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-hairline">
             <img src={photo} alt={`사진 ${i + 1}`} className="w-full h-full object-cover" />
             <button
               type="button"
               onClick={() => remove(i)}
-              className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+              className="absolute top-0.5 right-0.5 bg-brand-navy/60 text-on-dark rounded-full w-5 h-5 text-xs flex items-center justify-center"
             >
               ✕
             </button>
@@ -59,7 +59,7 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={loading}
-            className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-gray-400"
+            className="w-20 h-20 border-2 border-dashed border-hairline rounded-lg flex items-center justify-center text-steel hover:border-hairline-strong"
           >
             {loading ? `${compressing}...` : '+'}
           </button>

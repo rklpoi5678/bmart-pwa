@@ -37,20 +37,20 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
   if (manual) {
     return (
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">랙번호</label>
+        <label className="block text-sm font-medium text-slate mb-1">랙번호</label>
         <div className="flex gap-2">
           <input
             type="text"
             required
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base font-mono"
+            className="flex-1 border border-hairline-strong rounded-lg px-3 py-2 text-base font-mono bg-canvas text-ink"
             placeholder="C03-02-106"
           />
           <button
             type="button"
             onClick={() => setManual(false)}
-            className="text-xs text-blue-600 px-2 whitespace-nowrap"
+            className="text-xs text-link-blue px-2 whitespace-nowrap"
           >
             선택모드
           </button>
@@ -62,11 +62,11 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="text-sm font-medium text-gray-700">랙번호</label>
+        <label className="text-sm font-medium text-slate">랙번호</label>
         <button
           type="button"
           onClick={() => setManual(true)}
-          className="text-xs text-blue-600"
+          className="text-xs text-link-blue"
         >
           직접입력
         </button>
@@ -75,7 +75,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
       <div className="flex gap-1.5">
         {/* Zone */}
         <div className="flex-1">
-          <p className="text-xs text-gray-400 mb-1">구역</p>
+          <p className="text-xs text-steel mb-1">구역</p>
           <div className="grid grid-cols-3 gap-1">
             {ZONES.map((z) => (
               <button
@@ -84,8 +84,8 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
                 onClick={() => update('zone', z)}
                 className={`py-2 rounded text-sm font-medium border-2 ${
                   parts.zone === z
-                    ? 'border-blue-600 bg-blue-50 text-blue-600'
-                    : 'border-gray-200 text-gray-600'
+                    ? 'border-primary bg-card-tint-lavender text-primary'
+                    : 'border-hairline text-slate'
                 }`}
               >
                 {z}
@@ -96,11 +96,11 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
 
         {/* Row */}
         <div className="flex-1">
-          <p className="text-xs text-gray-400 mb-1">열</p>
+          <p className="text-xs text-steel mb-1">열</p>
           <select
             value={parts.row}
             onChange={(e) => update('row', e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm"
+            className="w-full border border-hairline-strong rounded-lg px-2 py-2 text-sm bg-canvas text-ink"
           >
             <option value="">선택</option>
             {ROWS.map((r) => (
@@ -111,11 +111,11 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
 
         {/* Rack */}
         <div className="flex-1">
-          <p className="text-xs text-gray-400 mb-1">랙</p>
+          <p className="text-xs text-steel mb-1">랙</p>
           <select
             value={parts.rack}
             onChange={(e) => update('rack', e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm"
+            className="w-full border border-hairline-strong rounded-lg px-2 py-2 text-sm bg-canvas text-ink"
           >
             <option value="">선택</option>
             {RACKS.map((r) => (
@@ -126,7 +126,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
       </div>
 
       {value && (
-        <p className="mt-2 text-center font-mono text-lg font-bold text-gray-800">{value}</p>
+        <p className="mt-2 text-center font-mono text-lg font-semibold text-ink">{value}</p>
       )}
     </div>
   );

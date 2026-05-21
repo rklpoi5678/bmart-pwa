@@ -27,12 +27,12 @@ const STEPS: Step[] = [
   {
     icon: '📤',
     title: '나가서 전송',
-    desc: '작업 종료 후 네트워크가 복구되면 아웃박스에서 복사해서 Slack에 붙여넣으세요.',
+    desc: '작업 종료 후 네트워크가 복구되면 아웃박스에서 복사해서 Slack 에 붙여넣으세요.',
   },
   {
     icon: '📱',
     title: '홈 화면에 추가',
-    desc: 'Safari에서 공유 버튼 → "홈 화면에 추가"를 누르면 앱처럼 사용할 수 있고, 오프라인과 알림이 지원됩니다.',
+    desc: 'Safari 에서 공유 버튼 → "홈 화면에 추가"를 누르면 앱처럼 사용할 수 있고, 오프라인과 알림이 지원됩니다.',
   },
 ];
 
@@ -52,13 +52,13 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-2xl p-6 pb-8">
+      <div className="bg-canvas w-full max-w-md rounded-2xl p-6 pb-8">
         <div className="flex justify-center gap-2 mb-6">
           {STEPS.map((_, i) => (
             <span
               key={i}
               className={`w-2 h-2 rounded-full transition-colors ${
-                i === step ? 'bg-blue-600' : i < step ? 'bg-blue-300' : 'bg-gray-200'
+                i === step ? 'bg-primary' : i < step ? 'bg-primary/50' : 'bg-surface'
               }`}
             />
           ))}
@@ -66,8 +66,8 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
 
         <div className="text-center mb-8">
           <span className="text-6xl block mb-4">{STEPS[step].icon}</span>
-          <h2 className="text-xl font-bold mb-3">{STEPS[step].title}</h2>
-          <p className="text-gray-600 leading-relaxed text-base">
+          <h2 className="text-xl font-semibold text-ink mb-3">{STEPS[step].title}</h2>
+          <p className="text-charcoal leading-relaxed text-base">
             {step === STEPS.length - 1 ? installDesc : STEPS[step].desc}
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
           {step > 0 && (
             <button
               onClick={() => setStep(step - 1)}
-              className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-600 font-medium"
+              className="flex-1 py-3 rounded-lg border border-hairline-strong text-charcoal font-medium"
             >
               이전
             </button>
@@ -90,7 +90,7 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
                 setStep(step + 1);
               }
             }}
-            className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium"
+            className="flex-1 py-3 rounded-lg bg-primary text-on-dark font-medium"
           >
             {isLast ? '시작하기' : '다음'}
           </button>
@@ -102,7 +102,7 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
               localStorage.setItem('bmark-onboarded', '1');
               onClose();
             }}
-            className="w-full mt-3 py-2 text-sm text-gray-400"
+            className="w-full mt-3 py-2 text-sm text-steel"
           >
             건너뛰기
           </button>

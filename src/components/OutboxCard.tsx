@@ -51,23 +51,23 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+    <div className="bg-canvas rounded-lg border border-hairline p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-medium">{TYPE_LABELS[item.type]}</span>
+        <span className="font-medium text-ink">{TYPE_LABELS[item.type]}</span>
         <StatusBadge status={item.status} />
       </div>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-slate">
         {new Date(item.createdAt).toLocaleString('ko-KR')}
       </p>
-      {item.note && <p className="text-sm text-gray-700">{item.note}</p>}
-      {item.error && <p className="text-sm text-red-500">{item.error}</p>}
+      {item.note && <p className="text-sm text-charcoal">{item.note}</p>}
+      {item.error && <p className="text-sm text-error">{item.error}</p>}
       {item.photos.length > 0 && (
         <div className="flex gap-1">
           {item.photos.slice(0, 3).map((p, i) => (
-            <img key={i} src={p} alt="" className="w-12 h-12 rounded object-cover" />
+            <img key={i} src={p} alt="" className="w-12 h-12 rounded-lg object-cover" />
           ))}
           {item.photos.length > 3 && (
-            <span className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+            <span className="w-12 h-12 rounded-lg bg-surface flex items-center justify-center text-xs text-steel">
               +{item.photos.length - 3}
             </span>
           )}
@@ -77,14 +77,14 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
         {item.status === 'pending' && (
           <>
             {mode === 'local' ? (
-              <button onClick={handleShare} className="flex-1 text-sm bg-blue-500 text-white rounded py-1.5">
-                Slack으로 공유
+              <button onClick={handleShare} className="flex-1 text-sm bg-primary text-on-dark rounded py-1.5">
+                Slack 으로 공유
               </button>
             ) : (
               <button
                 onClick={handleApiSend}
                 disabled={sending}
-                className="flex-1 text-sm bg-blue-500 text-white rounded py-1.5 disabled:opacity-50"
+                className="flex-1 text-sm bg-primary text-on-dark rounded py-1.5 disabled:opacity-50"
               >
                 {sending ? '전송 중...' : '서버로 전송'}
               </button>
@@ -92,11 +92,11 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
           </>
         )}
         {item.status === 'failed' && mode === 'api' && (
-          <button onClick={handleApiSend} disabled={sending} className="flex-1 text-sm bg-orange-500 text-white rounded py-1.5">
+          <button onClick={handleApiSend} disabled={sending} className="flex-1 text-sm bg-brand-orange text-on-dark rounded py-1.5">
             {sending ? '재시도 중...' : '재시도'}
           </button>
         )}
-        <button onClick={handleDelete} className="text-sm text-red-500 px-2">삭제</button>
+        <button onClick={handleDelete} className="text-sm text-error px-2">삭제</button>
       </div>
     </div>
   );
