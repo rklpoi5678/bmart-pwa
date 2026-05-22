@@ -2,12 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { isLoggedIn } from '@/lib/auth';
+import { fetchTargetLocation } from '@/lib/api';
+import {
+  getStoredLocation,
+  getCurrentPosition,
+  getDistance,
+  type LatLng,
+} from '@/lib/location';
 import { addToQueue } from '@/lib/queue';
+
+const LocationMap = dynamic(() => import('@/components/LocationMap'), { ssr: false });
 
 const WORKER_KEY = 'bmark-worker-name';
 const CHECKOUT_HOUR = 12;
-
-const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/14FU61y2q3BUx1bP-FjI5cSmY4KeCo-dSoiyuzT4raCI/edit';
 
 export default function AttendanceForm() {
   const router = useRouter();
@@ -15,6 +24,13 @@ export default function AttendanceForm() {
   const [saved, setSaved] = useState(false);
   const [now, setNow] = useState(new Date());
   const [submitting, setSubmitting] = useState(false);
+
+  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+  const [targetLocation, setTargetLocation] = useState<LatLng | null>(null);
+  const [locationError, setLocationError] = useState('');
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [inRange, setInRange] = useState(false);
+  const [distance, setDistance] = useState<number | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(WORKER_KEY);
@@ -27,7 +43,50 @@ export default function AttendanceForm() {
     return () => clearInterval(tick);
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      let target: LatLng | null = null;
+      if (isLoggedIn()) {
+        const serverLoc = await fetchTargetLocation();
+        if (serverLoc) target = { lat: serverLoc.lat, lng: serverLoc.lng };
+      }
+      if (!target) {
+        const stored = getStoredLocation();
+        if (stored) target = { lat: stored.lat, lng: stored.lng };
+      }
+      setTargetLocation(target);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!targetLocation) {
+      setLocationLoading(false);
+      return;
+    }
+    (async () => {
+      setLocationLoading(true);
+      setLocationError('');
+      try {
+        const pos = await getCurrentPosition();
+        const user = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(user);
+        const dist = getDistance(user, targetLocation);
+        setDistance(dist);
+        setInRange(dist <= 10);
+      } catch (err) {
+        setLocationError(String(err));
+        setInRange(false);
+      } finally {
+        setLocationLoading(false);
+      }
+    })();
+  }, [targetLocation]);
+
   const canCheckOut = now.getHours() >= CHECKOUT_HOUR;
+
+  const launchShiftee = () => {
+    window.location.href = 'sifty://';
+  };
 
   const handleSubmit = async (action: 'check-in' | 'check-out') => {
     if (!saved && !workerName.trim()) return;
@@ -45,6 +104,10 @@ export default function AttendanceForm() {
       createdAt: new Date(),
     });
     setSubmitting(false);
+
+    if (action === 'check-in') {
+      launchShiftee();
+    }
     router.push('/');
   };
 
@@ -98,13 +161,68 @@ export default function AttendanceForm() {
           </div>
         )}
 
+        {/* Location Map Section */}
+        <div className="bg-canvas rounded-lg border border-hairline p-3">
+          <p className="text-sm font-medium text-ink mb-2">현재 위치</p>
+
+          {locationLoading && !userLocation && (
+            <div className="h-[200px] flex items-center justify-center bg-surface rounded-lg">
+              <p className="text-steel text-sm">위치 확인 중...</p>
+            </div>
+          )}
+
+          {locationError && (
+            <div className="bg-card-tint-rose border border-error rounded-lg p-3 mb-2">
+              <p className="text-sm text-error">{locationError}</p>
+              <p className="text-xs text-steel mt-1">위치 권한을 허용해주세요.</p>
+            </div>
+          )}
+
+          {userLocation && targetLocation && (
+            <>
+              <LocationMap
+                center={userLocation}
+                markerPosition={userLocation}
+                draggable={false}
+                radius={10}
+                height="200px"
+                className="rounded-lg overflow-hidden mb-2"
+              />
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-steel">
+                  목표 지점까지 {distance != null ? `${Math.round(distance)}m` : '...'}
+                </span>
+                <span className={inRange ? 'text-success font-medium' : 'text-error font-medium'}>
+                  {inRange ? '범위 내' : '범위 밖'}
+                </span>
+              </div>
+            </>
+          )}
+
+          {!targetLocation && !locationLoading && (
+            <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3">
+              <p className="text-sm text-charcoal">목표 위치가 설정되지 않았습니다.</p>
+              <p className="text-xs text-steel mt-1">설정 페이지에서 출근 위치를 설정해주세요.</p>
+            </div>
+          )}
+        </div>
+
         <button
           onClick={() => handleSubmit('check-in')}
-          disabled={submitting || !saved}
+          disabled={submitting || !saved || !inRange}
           className="w-full py-4 rounded-xl font-bold text-lg bg-success text-on-dark disabled:opacity-40 active:scale-[0.98] transition-transform"
         >
           출근하기
         </button>
+
+        {inRange && (
+          <button
+            onClick={launchShiftee}
+            className="w-full py-3 rounded-lg border-2 border-hairline-strong text-slate font-medium text-sm"
+          >
+            Shiftee 앱 열기
+          </button>
+        )}
 
         <div>
           <button
@@ -119,17 +237,6 @@ export default function AttendanceForm() {
               오후 12:00 이후에 퇴근 가능합니다
             </p>
           )}
-        </div>
-
-        <div className="pt-4 border-t border-hairline">
-          <a
-            href={GOOGLE_FORM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full text-center py-3 rounded-lg border-2 border-hairline-strong text-slate font-medium"
-          >
-            출퇴근 폼 작성 (Google)
-          </a>
         </div>
       </div>
     </div>
