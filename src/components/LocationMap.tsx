@@ -95,5 +95,9 @@ export default function LocationMap({
     }
   }, [markerPosition.lat, markerPosition.lng]);
 
-  return <div ref={mapRef} style={{ height, width: '100%' }} className={className} />;
+  return (
+    <div style={{ height, width: '100%', isolation: 'isolate' }} className={className}>
+      <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
+    </div>
+  );
 }
