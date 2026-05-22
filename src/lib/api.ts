@@ -1,4 +1,5 @@
 import { WORKER_URL, authHeaders, setToken, clearToken } from './auth';
+import type { TargetLocation } from './location';
 
 export type AppMode = 'local' | 'api';
 
@@ -109,6 +110,26 @@ export async function deleteAccount(username: string): Promise<boolean> {
     method: 'POST',
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ username }),
+  });
+  const data = await res.json();
+  return data.ok;
+}
+
+// === Location API ===
+
+export async function fetchTargetLocation(): Promise<TargetLocation | null> {
+  const res = await fetch(`${WORKER_URL}/api/location`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  return data.ok ? data.location : null;
+}
+
+export async function saveTargetLocation(loc: TargetLocation): Promise<boolean> {
+  const res = await fetch(`${WORKER_URL}/api/location`, {
+    method: 'PUT',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(loc),
   });
   const data = await res.json();
   return data.ok;
