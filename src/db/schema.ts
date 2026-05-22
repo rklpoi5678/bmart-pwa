@@ -32,8 +32,6 @@ export type QueueItem = RackQueueItem | FreshnessQueueItem | AttendanceQueueItem
 
 export interface RackData {
   rackNumber: string;
-  category: string;
-  items: string;
 }
 
 export interface FreshnessData {

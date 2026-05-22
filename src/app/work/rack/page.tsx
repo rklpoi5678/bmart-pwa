@@ -1,30 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import PhotoCapture from '@/components/PhotoCapture';
 import RackNumberInput from '@/components/RackNumberInput';
-import { addToQueue } from '@/lib/queue';
-import { CATEGORY_OPTIONS } from '@/db/schema';
-import type { RackData } from '@/db/schema';
+import { addToQueue, getLastRackNumber } from '@/lib/queue';
 
 export default function RackForm() {
   const router = useRouter();
-  const [form, setForm] = useState<RackData>({ rackNumber: '', category: CATEGORY_OPTIONS[0], items: '' });
-  const [note, setNote] = useState('');
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [rackNumber, setRackNumber] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    getLastRackNumber().then((last) => {
+      if (last) setRackNumber(last);
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!rackNumber) return;
     setSubmitting(true);
     await addToQueue({
       type: 'rack',
       status: 'pending',
       target: 'slack',
-      data: form,
-      photos,
-      note,
+      data: { rackNumber },
+      photos: [],
+      note: '',
       createdAt: new Date(),
     });
     router.push('/');
@@ -38,52 +40,11 @@ export default function RackForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <RackNumberInput
-          value={form.rackNumber}
-          onChange={(v) => setForm({ ...form, rackNumber: v })}
-        />
-
-        <div>
-          <label className="block text-sm font-medium text-slate mb-1">카테고리</label>
-          <select
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
-          >
-            {CATEGORY_OPTIONS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate mb-1">검사 항목</label>
-          <textarea
-            required
-            value={form.items}
-            onChange={(e) => setForm({ ...form, items: e.target.value })}
-            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
-            rows={3}
-            placeholder="검사 내용 입력"
-          />
-        </div>
-
-        <PhotoCapture photos={photos} onChange={setPhotos} />
-
-        <div>
-          <label className="block text-sm font-medium text-slate mb-1">비고</label>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
-            rows={2}
-            placeholder="추가 메모 (선택)"
-          />
-        </div>
+        <RackNumberInput value={rackNumber} onChange={setRackNumber} />
 
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || !rackNumber}
           className="w-full bg-primary text-on-dark rounded-lg py-3 font-medium text-base disabled:opacity-50"
         >
           {submitting ? '저장 중...' : '아웃박스에 저장'}

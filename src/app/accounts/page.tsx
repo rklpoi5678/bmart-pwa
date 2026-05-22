@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
-import { isLoggedIn, clearToken, getToken } from '@/lib/auth';
+import { isLoggedIn, clearToken } from '@/lib/auth';
 import {
   loginAccount,
   logoutAccount,
@@ -22,25 +22,29 @@ interface Account {
 export default function AccountsPage() {
   const router = useRouter();
 
-  // Auth state
   const [loggedIn, setLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  // Form state
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Data state
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [qrData, setQrData] = useState<{ username: string; qrId: string; qrPw: string } | null>(null);
 
   const loadAccounts = useCallback(async () => {
     const list = await fetchAccounts();
     setAccounts(list);
+  }, []);
+
+  // Auto-generate QR for current user on login
+  const generateQrForUser = useCallback(async (user: string, pw: string) => {
+    const qrId = await QRCode.toDataURL(user, { width: 200, margin: 1 });
+    const qrPw = await QRCode.toDataURL(pw, { width: 200, margin: 1 });
+    setQrData({ username: user, qrId, qrPw });
   }, []);
 
   useEffect(() => {
@@ -62,6 +66,7 @@ export default function AccountsPage() {
     if (result.ok) {
       setLoggedIn(true);
       setCurrentUser(result.username!);
+      await generateQrForUser(username, password);
       setUsername('');
       setPassword('');
       loadAccounts();
@@ -79,9 +84,7 @@ export default function AccountsPage() {
     if (result.ok) {
       setLoggedIn(true);
       setCurrentUser(result.username!);
-      const qrId = await QRCode.toDataURL(username, { width: 200, margin: 1 });
-      const qrPw = await QRCode.toDataURL(password, { width: 200, margin: 1 });
-      setQrData({ username, qrId, qrPw });
+      await generateQrForUser(username, password);
       setUsername('');
       setPassword('');
       loadAccounts();
@@ -105,34 +108,6 @@ export default function AccountsPage() {
     loadAccounts();
   };
 
-  const handleShowQr = async (acc: Account) => {
-    // QR codes are generated from the stored username — password QR needs the password
-    // which we don't have after login. Show username QR + prompt for password.
-    const pw = prompt(`${acc.username} 비밀번호 입력`);
-    if (!pw) return;
-    const qrId = await QRCode.toDataURL(acc.username, { width: 200, margin: 1 });
-    const qrPw = await QRCode.toDataURL(pw, { width: 200, margin: 1 });
-    setQrData({ username: acc.username, qrId, qrPw });
-  };
-
-  const handleAddAccount = async () => {
-    if (!username || !password) { setError('아이디와 비밀번호를 입력하세요'); return; }
-    setLoading(true);
-    setError('');
-    const result = await registerAccount(username, password);
-    if (result.ok) {
-      const qrId = await QRCode.toDataURL(username, { width: 200, margin: 1 });
-      const qrPw = await QRCode.toDataURL(password, { width: 200, margin: 1 });
-      setQrData({ username, qrId, qrPw });
-      setUsername('');
-      setPassword('');
-      loadAccounts();
-    } else {
-      setError(result.error || '등록 실패');
-    }
-    setLoading(false);
-  };
-
   // === Not Logged In ===
   if (!loggedIn) {
     return (
@@ -142,7 +117,6 @@ export default function AccountsPage() {
           <h1 className="text-xl font-semibold text-ink">계정</h1>
         </div>
 
-        {/* Tab Toggle */}
         <div className="flex gap-3 mb-6">
           <button
             onClick={() => { setAuthMode('login'); setError(''); }}
@@ -228,52 +202,15 @@ export default function AccountsPage() {
         <h1 className="text-xl font-semibold text-ink">계정</h1>
         <div className="flex-1" />
         <span className="text-sm text-slate">{currentUser}</span>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-error font-medium"
-        >
+        <button onClick={handleLogout} className="text-sm text-error font-medium">
           로그아웃
         </button>
       </div>
 
-      {/* Add Account Form */}
-      <div className="bg-canvas rounded-xl border border-hairline p-4 space-y-3 mb-6">
-        <h2 className="font-semibold text-ink">새 계정 등록</h2>
-        <div>
-          <label className="block text-sm text-slate mb-1">아이디</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base font-mono bg-canvas text-ink"
-            placeholder="audit_2026039"
-          />
-        </div>
-        <div>
-          <label className="block text-sm text-slate mb-1">비밀번호</label>
-          <input
-            type="text"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base font-mono bg-canvas text-ink"
-            placeholder="audit_2026039"
-          />
-          <p className="text-xs text-steel mt-1">아이디와 동일하게 설정 권장</p>
-        </div>
-        {error && <p className="text-sm text-error">{error}</p>}
-        <button
-          onClick={handleAddAccount}
-          disabled={loading}
-          className="w-full bg-primary text-on-dark rounded-lg py-3 font-medium disabled:opacity-50"
-        >
-          {loading ? '등록 중...' : '등록 + QR 생성'}
-        </button>
-      </div>
-
-      {/* QR Display */}
+      {/* QR Display — always shown for current user */}
       {qrData && (
         <div className="bg-canvas rounded-xl border border-hairline p-4 mb-6">
-          <h2 className="font-semibold text-ink mb-3">QR 코드 — {qrData.username}</h2>
+          <h2 className="font-semibold text-ink mb-3">내 QR 코드 — {qrData.username}</h2>
           <div className="flex gap-4 justify-center">
             <div className="text-center">
               <img src={qrData.qrId} alt="ID QR" className="w-40 h-40 mx-auto" />
@@ -285,12 +222,6 @@ export default function AccountsPage() {
             </div>
           </div>
           <p className="text-xs text-steel text-center mt-3">PDA로 각 QR을 스캔하여 로그인</p>
-          <button
-            onClick={() => setQrData(null)}
-            className="w-full mt-3 py-2 text-sm text-steel"
-          >
-            닫기
-          </button>
         </div>
       )}
 
@@ -306,17 +237,9 @@ export default function AccountsPage() {
                 <p className="font-mono font-medium text-ink">{acc.username}</p>
                 <p className="text-xs text-steel">{new Date(acc.created_at).toLocaleDateString('ko-KR')}</p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleShowQr(acc)}
-                  className="text-sm text-primary font-medium px-2"
-                >
-                  QR
-                </button>
-                <button onClick={() => handleDelete(acc.username)} className="text-sm text-error px-2">
-                  삭제
-                </button>
-              </div>
+              <button onClick={() => handleDelete(acc.username)} className="text-sm text-error px-2">
+                삭제
+              </button>
             </div>
           ))
         )}

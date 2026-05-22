@@ -24,6 +24,16 @@ export async function deleteItem(id: number): Promise<void> {
   await db.outbox.delete(id);
 }
 
+export async function getLastRackNumber(): Promise<string | null> {
+  const items = await db.outbox
+    .where('type').equals('rack')
+    .reverse()
+    .sortBy('createdAt');
+  const last = items[0];
+  if (!last || last.type !== 'rack') return null;
+  return last.data.rackNumber || null;
+}
+
 export async function getPendingCount(): Promise<number> {
   return db.outbox.where('status').equals('pending').count();
 }

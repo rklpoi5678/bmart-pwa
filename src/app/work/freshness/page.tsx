@@ -12,7 +12,6 @@ export default function FreshnessForm() {
     productName: '',
     issue: '',
   });
-  const [note, setNote] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -25,7 +24,7 @@ export default function FreshnessForm() {
       target: 'slack',
       data: form,
       photos,
-      note,
+      note: '',
       createdAt: new Date(),
     });
     router.push('/');
@@ -64,17 +63,6 @@ export default function FreshnessForm() {
         </div>
 
         <PhotoCapture photos={photos} onChange={setPhotos} />
-
-        <div>
-          <label className="block text-sm font-medium text-slate mb-1">비고</label>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
-            rows={2}
-            placeholder="추가 메모 (선택)"
-          />
-        </div>
 
         <button
           type="submit"

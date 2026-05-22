@@ -1,4 +1,4 @@
-import type { QueueItem, QueueItemType } from '@/db/schema';
+import type { QueueItem } from '@/db/schema';
 import { TYPE_LABELS } from '@/db/schema';
 
 function formatText(item: QueueItem): string {
@@ -7,7 +7,7 @@ function formatText(item: QueueItem): string {
 
   switch (item.type) {
     case 'rack':
-      body = `랙번호: ${item.data.rackNumber}\n카테고리: ${item.data.category}\n항목: ${item.data.items}`;
+      body = `랙번호: ${item.data.rackNumber}`;
       break;
     case 'freshness':
       body = `품명: ${item.data.productName}\n이슈: ${item.data.issue}`;
