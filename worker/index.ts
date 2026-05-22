@@ -52,6 +52,7 @@ async function requireAuth(request: Request, env: Env): Promise<{ username: stri
 
 async function migrate(env: Env): Promise<void> {
   await env.DB.exec(`CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, username TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL)`);
+  await env.DB.exec(`CREATE TABLE IF NOT EXISTS target_locations (username TEXT PRIMARY KEY, lat REAL NOT NULL, lng REAL NOT NULL, label TEXT, updated_at INTEGER NOT NULL)`);
 }
 
 export default {
@@ -162,6 +163,30 @@ export default {
         }
         const valid = await verifyPassword(password, row.password_hash);
         return new Response(JSON.stringify({ ok: valid }), { headers });
+      }
+
+      // === Location Routes ===
+
+      if (url.pathname === '/api/location' && request.method === 'GET') {
+        const authResult = await requireAuth(request, env);
+        if (authResult instanceof Response) return authResult;
+        const row = await env.DB.prepare(
+          'SELECT lat, lng, label FROM target_locations WHERE username = ?'
+        ).bind(authResult.username).first<{ lat: number; lng: number; label: string | null }>();
+        return new Response(JSON.stringify({ ok: true, location: row || null }), { headers });
+      }
+
+      if (url.pathname === '/api/location' && request.method === 'PUT') {
+        const authResult = await requireAuth(request, env);
+        if (authResult instanceof Response) return authResult;
+        const { lat, lng, label } = await request.json() as { lat: number; lng: number; label?: string };
+        if (typeof lat !== 'number' || typeof lng !== 'number') {
+          return new Response(JSON.stringify({ error: 'lat, lng required' }), { status: 400, headers });
+        }
+        await env.DB.prepare(
+          'INSERT OR REPLACE INTO target_locations (username, lat, lng, label, updated_at) VALUES (?, ?, ?, ?, ?)'
+        ).bind(authResult.username, lat, lng, label || null, Date.now()).run();
+        return new Response(JSON.stringify({ ok: true }), { headers });
       }
 
       // === Queue Routes ===
