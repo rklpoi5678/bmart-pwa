@@ -270,7 +270,7 @@ function formatSlackMessage(p: QueuePayload): string {
   let body = '';
   switch (p.type) {
     case 'rack':
-      body = `랙번호: ${p.data.rackNumber}`;
+      body = `랙번호: ${p.data.rackNumber}${p.data.category === 'meat' ? ' (수축산)' : ''}`;
       break;
     case 'freshness':
       body = `품명: ${p.data.productName}\n이슈: ${p.data.issue}`;

@@ -8,6 +8,7 @@ import { addToQueue, getLastRackNumber, getRackHistory } from '@/lib/queue';
 export default function RackForm() {
   const router = useRouter();
   const [rackNumber, setRackNumber] = useState('');
+  const [isMeat, setIsMeat] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
 
@@ -26,7 +27,7 @@ export default function RackForm() {
       type: 'rack',
       status: 'pending',
       target: 'slack',
-      data: { rackNumber },
+      data: { rackNumber, ...(isMeat ? { category: 'meat' as const } : {}) },
       photos: [],
       note: '',
       createdAt: new Date(),
@@ -43,6 +44,18 @@ export default function RackForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <RackNumberInput value={rackNumber} onChange={setRackNumber} />
+
+        <button
+          type="button"
+          onClick={() => setIsMeat(!isMeat)}
+          className={`w-full py-3 rounded-lg font-medium text-base border-2 transition-colors ${
+            isMeat
+              ? 'border-red-400 bg-red-50 text-red-600'
+              : 'border-hairline text-slate hover:border-hairline-strong'
+          }`}
+        >
+          {isMeat ? '수축산 ✓' : '수축산'}
+        </button>
 
         <button
           type="submit"

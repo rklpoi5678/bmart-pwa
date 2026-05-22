@@ -195,7 +195,7 @@ export default function AccountsPage() {
       {qrData ? (
         <div className="bg-canvas rounded-xl border border-hairline p-4">
           <h2 className="font-semibold text-ink mb-3">내 QR 코드 — {qrData.username}</h2>
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-col items-center gap-3">
             <div className="text-center">
               <img src={qrData.qrId} alt="ID QR" className="w-40 h-40 mx-auto" />
               <p className="text-xs text-steel mt-1">아이디</p>
@@ -205,7 +205,7 @@ export default function AccountsPage() {
               <p className="text-xs text-steel mt-1">비밀번호</p>
             </div>
           </div>
-          <p className="text-xs text-steel text-center mt-3">PDA로 각 QR을 스캔하여 로그인</p>
+          <p className="text-xs text-steel text-center mt-3">PDA로 위에서 아래로 순서대로 스캔하세요</p>
         </div>
       ) : (
         <p className="text-sm text-steel py-8 text-center">QR 코드를 불러올 수 없습니다</p>

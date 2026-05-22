@@ -7,28 +7,34 @@ interface RackNumberInputProps {
   onChange: (value: string) => void;
 }
 
-const ZONES = Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0'));
+const ZONE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+const ZONE_NUMBERS = Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0'));
 const ROWS = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, '0'));
 const RACKS = Array.from({ length: 50 }, (_, i) => String(i + 1).padStart(3, '0'));
 
 export default function RackNumberInput({ value, onChange }: RackNumberInputProps) {
   const parse = (v: string) => {
+    // format: C02-01-003 or 02-01-003
     const parts = v.split('-');
+    const first = parts[0] || '';
+    const isLetter = /^[A-F]$/.test(first);
     return {
-      zone: parts[0] || '',
-      row: parts[1] || '',
-      rack: parts[2] || '',
+      letter: isLetter ? first : '',
+      zone: isLetter ? (parts[1] || '') : first,
+      row: isLetter ? (parts[2] || '') : (parts[1] || ''),
+      rack: isLetter ? (parts[3] || '') : (parts[2] || ''),
     };
   };
 
   const [parts, setParts] = useState(parse(value));
   const [manual, setManual] = useState(false);
 
-  const update = (key: 'zone' | 'row' | 'rack', val: string) => {
+  const update = (key: 'letter' | 'zone' | 'row' | 'rack', val: string) => {
     const next = { ...parts, [key]: val };
     setParts(next);
     if (next.zone && next.row && next.rack) {
-      onChange(`${next.zone}-${next.row}-${next.rack}`);
+      const prefix = next.letter ? `${next.letter}${next.zone}` : next.zone;
+      onChange(`${prefix}-${next.row}-${next.rack}`);
     } else {
       onChange('');
     }
@@ -45,7 +51,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className="flex-1 border border-hairline-strong rounded-lg px-3 py-2 text-base font-mono bg-canvas text-ink"
-            placeholder="01-01-001"
+            placeholder="C02-01-003"
           />
           <button
             type="button"
@@ -72,8 +78,40 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
         </button>
       </div>
 
+      {/* Letter selector */}
+      <div className="mb-2">
+        <p className="text-xs text-steel mb-1">구역 문자</p>
+        <div className="flex gap-1">
+          {ZONE_LETTERS.map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => update('letter', l)}
+              className={`flex-1 py-2 rounded text-sm font-medium border-2 ${
+                parts.letter === l
+                  ? 'border-primary bg-card-tint-lavender text-primary'
+                  : 'border-hairline text-slate'
+              }`}
+            >
+              {l}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => update('letter', '')}
+            className={`flex-1 py-2 rounded text-xs font-medium border-2 ${
+              !parts.letter
+                ? 'border-primary bg-card-tint-lavender text-primary'
+                : 'border-hairline text-slate'
+            }`}
+          >
+            없음
+          </button>
+        </div>
+      </div>
+
       <div className="flex gap-1.5">
-        {/* Zone */}
+        {/* Zone Number */}
         <div className="flex-1">
           <p className="text-xs text-steel mb-1">구역</p>
           <select
@@ -82,7 +120,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
             className="w-full border border-hairline-strong rounded-lg px-2 py-2 text-sm bg-canvas text-ink"
           >
             <option value="">선택</option>
-            {ZONES.map((z) => (
+            {ZONE_NUMBERS.map((z) => (
               <option key={z} value={z}>{z}</option>
             ))}
           </select>

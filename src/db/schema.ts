@@ -32,6 +32,7 @@ export type QueueItem = RackQueueItem | FreshnessQueueItem | AttendanceQueueItem
 
 export interface RackData {
   rackNumber: string;
+  category?: 'meat';
 }
 
 export interface FreshnessData {
