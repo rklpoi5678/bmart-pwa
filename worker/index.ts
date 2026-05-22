@@ -51,12 +51,7 @@ async function requireAuth(request: Request, env: Env): Promise<{ username: stri
 // === DB Migration ===
 
 async function migrate(env: Env): Promise<void> {
-  await env.DB.exec(`CREATE TABLE IF NOT EXISTS sessions (
-    token TEXT PRIMARY KEY,
-    username TEXT NOT NULL,
-    expires_at INTEGER NOT NULL,
-    created_at INTEGER NOT NULL
-  )`);
+  await env.DB.exec(`CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, username TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL)`);
 }
 
 export default {
@@ -270,7 +265,7 @@ async function sendToSheets(env: Env, payload: QueuePayload): Promise<Response> 
 
 function formatSlackMessage(p: QueuePayload): string {
   const labels = { rack: '랙검사', freshness: '선도문의', attendance: '출퇴근' };
-  const header = `[${labels[p.type]}] ${p.timestamp}`;
+  const header = `[${labels[p.type]}]`;
   const body = Object.entries(p.data)
     .map(([k, v]) => `${k}: ${v}`)
     .join('\n');
