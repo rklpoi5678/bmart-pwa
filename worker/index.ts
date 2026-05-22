@@ -264,11 +264,26 @@ async function sendToSheets(env: Env, payload: QueuePayload): Promise<Response> 
 }
 
 function formatSlackMessage(p: QueuePayload): string {
-  const labels = { rack: '랙검사', freshness: '선도문의', attendance: '출퇴근' };
-  const header = `[${labels[p.type]}]`;
-  const body = Object.entries(p.data)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join('\n');
+  const labels: Record<string, string> = { rack: '랙검사', freshness: '선도문의', attendance: '출퇴근' };
+  const header = `[${labels[p.type] || p.type}]`;
+
+  let body = '';
+  switch (p.type) {
+    case 'rack':
+      body = `랙번호: ${p.data.rackNumber}`;
+      break;
+    case 'freshness':
+      body = `품명: ${p.data.productName}\n이슈: ${p.data.issue}`;
+      break;
+    case 'attendance':
+      body = `작업자: ${p.data.workerName}\n${p.data.action === 'check-in' ? '출근' : '퇴근'}`;
+      break;
+    default:
+      body = Object.entries(p.data)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('\n');
+  }
+
   return p.note ? `${header}\n${body}\n비고: ${p.note}` : `${header}\n${body}`;
 }
 

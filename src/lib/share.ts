@@ -7,7 +7,7 @@ function formatText(item: QueueItem): string {
 
   switch (item.type) {
     case 'rack':
-      body = `랙번호: ${item.data.rackNumber}`;
+      body = `랙검사 — ${item.data.rackNumber}`;
       break;
     case 'freshness':
       body = `품명: ${item.data.productName}\n이슈: ${item.data.issue}`;

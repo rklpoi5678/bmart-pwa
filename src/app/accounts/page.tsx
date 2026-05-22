@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
-import { isLoggedIn, clearToken } from '@/lib/auth';
+import { isLoggedIn, clearToken, getToken } from '@/lib/auth';
 import {
   loginAccount,
   logoutAccount,
@@ -33,14 +33,19 @@ export default function AccountsPage() {
   }, []);
 
   useEffect(() => {
-    if (isLoggedIn()) {
-      setLoggedIn(true);
-      fetchCurrentUser().then((u) => {
-        if (u) setCurrentUser(u.username);
-        else { clearToken(); setLoggedIn(false); }
-      });
-    }
-  }, []);
+    const token = getToken();
+    if (!token) return;
+    setLoggedIn(true);
+    fetchCurrentUser().then((u) => {
+      if (u) {
+        setCurrentUser(u.username);
+        generateQrForUser(u.username, '••••••');
+      } else {
+        clearToken();
+        setLoggedIn(false);
+      }
+    });
+  }, [generateQrForUser]);
 
   const handleLogin = async () => {
     if (!username || !password) { setError('아이디와 비밀번호를 입력하세요'); return; }
@@ -164,6 +169,10 @@ export default function AccountsPage() {
           >
             {loading ? '처리 중...' : authMode === 'login' ? '로그인' : '회원가입'}
           </button>
+
+          <p className="text-xs text-steel text-center leading-relaxed">
+            비밀번호는 안전하게 암호화되어 저장되며, 다른 사람과 공유되지 않습니다.
+          </p>
         </div>
       </div>
     );

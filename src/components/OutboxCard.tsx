@@ -53,7 +53,11 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
   return (
     <div className="bg-canvas rounded-lg border border-hairline p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-medium text-ink">{TYPE_LABELS[item.type]}</span>
+        <span className="font-medium text-ink">
+          {item.type === 'rack' && item.data.rackNumber
+            ? `랙검사 — ${item.data.rackNumber}`
+            : TYPE_LABELS[item.type]}
+        </span>
         <StatusBadge status={item.status} />
       </div>
       <p className="text-sm text-slate">

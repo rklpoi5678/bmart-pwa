@@ -7,9 +7,9 @@ interface RackNumberInputProps {
   onChange: (value: string) => void;
 }
 
-const ZONES = ['A', 'B', 'C', 'D', 'E', 'F'];
-const ROWS = Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0'));
-const RACKS = Array.from({ length: 100 }, (_, i) => String(i + 1).padStart(3, '0'));
+const ZONES = Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0'));
+const ROWS = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, '0'));
+const RACKS = Array.from({ length: 50 }, (_, i) => String(i + 1).padStart(3, '0'));
 
 export default function RackNumberInput({ value, onChange }: RackNumberInputProps) {
   const parse = (v: string) => {
@@ -28,7 +28,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
     const next = { ...parts, [key]: val };
     setParts(next);
     if (next.zone && next.row && next.rack) {
-      onChange(`${next.zone}${next.row}-${next.row}-${next.rack}`);
+      onChange(`${next.zone}-${next.row}-${next.rack}`);
     } else {
       onChange('');
     }
@@ -45,7 +45,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className="flex-1 border border-hairline-strong rounded-lg px-3 py-2 text-base font-mono bg-canvas text-ink"
-            placeholder="C03-02-106"
+            placeholder="01-01-001"
           />
           <button
             type="button"
@@ -76,22 +76,16 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
         {/* Zone */}
         <div className="flex-1">
           <p className="text-xs text-steel mb-1">구역</p>
-          <div className="grid grid-cols-3 gap-1">
+          <select
+            value={parts.zone}
+            onChange={(e) => update('zone', e.target.value)}
+            className="w-full border border-hairline-strong rounded-lg px-2 py-2 text-sm bg-canvas text-ink"
+          >
+            <option value="">선택</option>
             {ZONES.map((z) => (
-              <button
-                key={z}
-                type="button"
-                onClick={() => update('zone', z)}
-                className={`py-2 rounded text-sm font-medium border-2 ${
-                  parts.zone === z
-                    ? 'border-primary bg-card-tint-lavender text-primary'
-                    : 'border-hairline text-slate'
-                }`}
-              >
-                {z}
-              </button>
+              <option key={z} value={z}>{z}</option>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Row */}
