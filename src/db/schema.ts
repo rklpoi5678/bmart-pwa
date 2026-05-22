@@ -38,7 +38,6 @@ export interface RackData {
 
 export interface FreshnessData {
   productName: string;
-  category: string;
   issue: string;
 }
 
