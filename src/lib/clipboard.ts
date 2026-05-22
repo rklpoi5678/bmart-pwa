@@ -2,7 +2,7 @@ import type { QueueItem, QueueItemType } from '@/db/schema';
 import { TYPE_LABELS } from '@/db/schema';
 
 function formatItem(item: QueueItem): string {
-  const header = `[${TYPE_LABELS[item.type]}] ${new Date(item.createdAt).toLocaleString('ko-KR')}`;
+  const header = `[${TYPE_LABELS[item.type]}]`;
   let body = '';
 
   switch (item.type) {
@@ -10,7 +10,7 @@ function formatItem(item: QueueItem): string {
       body = `랙번호: ${item.data.rackNumber}\n카테고리: ${item.data.category}\n항목: ${item.data.items}`;
       break;
     case 'freshness':
-      body = `품명: ${item.data.productName}\n카테고리: ${item.data.category}\n이슈: ${item.data.issue}`;
+      body = `품명: ${item.data.productName}\n이슈: ${item.data.issue}`;
       break;
     case 'attendance':
       body = `작업자: ${item.data.workerName}\n${item.data.action === 'check-in' ? '출근' : '퇴근'}`;

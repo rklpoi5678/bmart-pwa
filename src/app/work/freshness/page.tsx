@@ -4,14 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PhotoCapture from '@/components/PhotoCapture';
 import { addToQueue } from '@/lib/queue';
-import { CATEGORY_OPTIONS } from '@/db/schema';
 import type { FreshnessData } from '@/db/schema';
 
 export default function FreshnessForm() {
   const router = useRouter();
   const [form, setForm] = useState<FreshnessData>({
     productName: '',
-    category: CATEGORY_OPTIONS[0],
     issue: '',
   });
   const [note, setNote] = useState('');
@@ -51,19 +49,6 @@ export default function FreshnessForm() {
             className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
             placeholder="예: 바나나"
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate mb-1">카테고리</label>
-          <select
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="w-full border border-hairline-strong rounded-lg px-3 py-2 text-base bg-canvas text-ink"
-          >
-            {CATEGORY_OPTIONS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
         </div>
 
         <div>
