@@ -9,7 +9,7 @@ interface RackNumberInputProps {
 
 const ZONES = ['A', 'B', 'C', 'D', 'E', 'F'];
 const ROWS = Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0'));
-const RACKS = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(3, '0'));
+const RACKS = Array.from({ length: 100 }, (_, i) => String(i + 1).padStart(3, '0'));
 
 export default function RackNumberInput({ value, onChange }: RackNumberInputProps) {
   const parse = (v: string) => {
@@ -28,7 +28,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
     const next = { ...parts, [key]: val };
     setParts(next);
     if (next.zone && next.row && next.rack) {
-      onChange(`${next.zone}-${next.row}-${next.rack}`);
+      onChange(`${next.zone}${next.row}-${next.row}-${next.rack}`);
     } else {
       onChange('');
     }

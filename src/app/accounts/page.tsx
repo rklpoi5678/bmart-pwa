@@ -9,15 +9,7 @@ import {
   logoutAccount,
   registerAccount,
   fetchCurrentUser,
-  fetchAccounts,
-  deleteAccount,
 } from '@/lib/api';
-
-interface Account {
-  id: number;
-  username: string;
-  created_at: string;
-}
 
 export default function AccountsPage() {
   const router = useRouter();
@@ -32,15 +24,8 @@ export default function AccountsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [qrData, setQrData] = useState<{ username: string; qrId: string; qrPw: string } | null>(null);
 
-  const loadAccounts = useCallback(async () => {
-    const list = await fetchAccounts();
-    setAccounts(list);
-  }, []);
-
-  // Auto-generate QR for current user on login
   const generateQrForUser = useCallback(async (user: string, pw: string) => {
     const qrId = await QRCode.toDataURL(user, { width: 200, margin: 1 });
     const qrPw = await QRCode.toDataURL(pw, { width: 200, margin: 1 });
@@ -54,9 +39,8 @@ export default function AccountsPage() {
         if (u) setCurrentUser(u.username);
         else { clearToken(); setLoggedIn(false); }
       });
-      loadAccounts();
     }
-  }, [loadAccounts]);
+  }, []);
 
   const handleLogin = async () => {
     if (!username || !password) { setError('아이디와 비밀번호를 입력하세요'); return; }
@@ -69,7 +53,6 @@ export default function AccountsPage() {
       await generateQrForUser(username, password);
       setUsername('');
       setPassword('');
-      loadAccounts();
     } else {
       setError(result.error || '로그인 실패');
     }
@@ -87,7 +70,6 @@ export default function AccountsPage() {
       await generateQrForUser(username, password);
       setUsername('');
       setPassword('');
-      loadAccounts();
     } else {
       setError(result.error || '등록 실패');
     }
@@ -98,14 +80,7 @@ export default function AccountsPage() {
     await logoutAccount();
     setLoggedIn(false);
     setCurrentUser(null);
-    setAccounts([]);
     setQrData(null);
-  };
-
-  const handleDelete = async (name: string) => {
-    if (!confirm(`"${name}" 계정을 삭제하시겠습니까?`)) return;
-    await deleteAccount(name);
-    loadAccounts();
   };
 
   // === Not Logged In ===
@@ -207,9 +182,9 @@ export default function AccountsPage() {
         </button>
       </div>
 
-      {/* QR Display — always shown for current user */}
-      {qrData && (
-        <div className="bg-canvas rounded-xl border border-hairline p-4 mb-6">
+      {/* QR Display */}
+      {qrData ? (
+        <div className="bg-canvas rounded-xl border border-hairline p-4">
           <h2 className="font-semibold text-ink mb-3">내 QR 코드 — {qrData.username}</h2>
           <div className="flex gap-4 justify-center">
             <div className="text-center">
@@ -223,27 +198,9 @@ export default function AccountsPage() {
           </div>
           <p className="text-xs text-steel text-center mt-3">PDA로 각 QR을 스캔하여 로그인</p>
         </div>
+      ) : (
+        <p className="text-sm text-steel py-8 text-center">QR 코드를 불러올 수 없습니다</p>
       )}
-
-      {/* Account List */}
-      <div className="space-y-2">
-        <h2 className="font-semibold text-ink">등록된 계정</h2>
-        {accounts.length === 0 ? (
-          <p className="text-sm text-steel py-4 text-center">등록된 계정이 없습니다</p>
-        ) : (
-          accounts.map((acc) => (
-            <div key={acc.id} className="bg-canvas rounded-xl border border-hairline p-3 flex items-center justify-between">
-              <div>
-                <p className="font-mono font-medium text-ink">{acc.username}</p>
-                <p className="text-xs text-steel">{new Date(acc.created_at).toLocaleDateString('ko-KR')}</p>
-              </div>
-              <button onClick={() => handleDelete(acc.username)} className="text-sm text-error px-2">
-                삭제
-              </button>
-            </div>
-          ))
-        )}
-      </div>
     </div>
   );
 }

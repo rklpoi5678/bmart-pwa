@@ -34,6 +34,25 @@ export async function getLastRackNumber(): Promise<string | null> {
   return last.data.rackNumber || null;
 }
 
+export async function getRackHistory(): Promise<string[]> {
+  const items = await db.outbox
+    .where('type').equals('rack')
+    .reverse()
+    .sortBy('createdAt');
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of items) {
+    if (item.type !== 'rack') continue;
+    const rn = item.data.rackNumber;
+    if (rn && !seen.has(rn)) {
+      seen.add(rn);
+      result.push(rn);
+    }
+    if (result.length >= 10) break;
+  }
+  return result;
+}
+
 export async function getPendingCount(): Promise<number> {
   return db.outbox.where('status').equals('pending').count();
 }

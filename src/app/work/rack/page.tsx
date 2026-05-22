@@ -3,17 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import RackNumberInput from '@/components/RackNumberInput';
-import { addToQueue, getLastRackNumber } from '@/lib/queue';
+import { addToQueue, getLastRackNumber, getRackHistory } from '@/lib/queue';
 
 export default function RackForm() {
   const router = useRouter();
   const [rackNumber, setRackNumber] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
 
   useEffect(() => {
     getLastRackNumber().then((last) => {
       if (last) setRackNumber(last);
     });
+    getRackHistory().then(setHistory);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +52,28 @@ export default function RackForm() {
           {submitting ? '저장 중...' : '아웃박스에 저장'}
         </button>
       </form>
+
+      {history.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-sm font-medium text-slate mb-2">최근 랙번호</h2>
+          <div className="flex flex-wrap gap-2">
+            {history.map((r, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setRackNumber(r)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-mono border-2 ${
+                  rackNumber === r
+                    ? 'border-primary bg-card-tint-lavender text-primary'
+                    : 'border-hairline text-slate hover:border-hairline-strong'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
