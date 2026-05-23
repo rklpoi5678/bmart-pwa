@@ -25,6 +25,7 @@ export default function OutboxPage() {
     setItems(await getQueueItems(status));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [tab]);
 
   const handleShareAll = async () => {
