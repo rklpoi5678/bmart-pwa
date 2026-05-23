@@ -1,3 +1,6 @@
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+
 export interface Env {
   SLACK_WEBHOOK_URL: string;
   GOOGLE_SHEETS_ID: string;
@@ -14,6 +17,18 @@ interface QueuePayload {
   timestamp: string;
 }
 
+const app = new Hono<{ Bindings: Env }>();
+
+app.use(
+  '/api/*',
+  cors({
+    origin: 'https://bmark-pwa.pages.dev',
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400,
+  }),
+);
+
 // === Auth Utilities ===
 
 function generateToken(): string {
@@ -27,7 +42,7 @@ async function getAuthUser(request: Request, env: Env): Promise<{ username: stri
   if (!auth || !auth.startsWith('Bearer ')) return null;
   const token = auth.slice(7);
   const row = await env.DB.prepare(
-    'SELECT username, expires_at FROM sessions WHERE token = ?'
+    'SELECT username, expires_at FROM sessions WHERE token = ?',
   ).bind(token).first<{ username: string; expires_at: number }>();
   if (!row) return null;
   if (Date.now() > row.expires_at) {
@@ -37,17 +52,6 @@ async function getAuthUser(request: Request, env: Env): Promise<{ username: stri
   return { username: row.username };
 }
 
-async function requireAuth(request: Request, env: Env): Promise<{ username: string } | Response> {
-  const user = await getAuthUser(request, env);
-  if (!user) {
-    return new Response(JSON.stringify({ error: '인증이 필요합니다' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
-  }
-  return user;
-}
-
 // === DB Migration ===
 
 async function migrate(env: Env): Promise<void> {
@@ -55,176 +59,149 @@ async function migrate(env: Env): Promise<void> {
   await env.DB.exec(`CREATE TABLE IF NOT EXISTS target_locations (username TEXT PRIMARY KEY, lat REAL NOT NULL, lng REAL NOT NULL, label TEXT, updated_at INTEGER NOT NULL)`);
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const headers = {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
+// === Account Routes ===
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers });
-    }
+app.post('/api/account/register', async (c) => {
+  const env = c.env;
+  const { username, password } = await c.req.json() as { username: string; password: string };
+  if (!username || !password) {
+    return c.json({ error: 'username, password required' }, 400);
+  }
 
-    const url = new URL(request.url);
+  const existing = await env.DB.prepare('SELECT id FROM accounts WHERE username = ?').bind(username).first();
+  if (existing) {
+    return c.json({ error: '이미 등록된 계정입니다' }, 409);
+  }
 
-    try {
-      await migrate(env);
+  const hash = await hashPassword(password);
+  await env.DB.prepare('INSERT INTO accounts (username, password_hash) VALUES (?, ?)').bind(username, hash).run();
 
-      // === Account (QR Login) Routes ===
+  const token = generateToken();
+  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  await env.DB.prepare(
+    'INSERT INTO sessions (token, username, expires_at, created_at) VALUES (?, ?, ?, ?)',
+  ).bind(token, username, expiresAt, Date.now()).run();
 
-      if (url.pathname === '/api/account/register' && request.method === 'POST') {
-        const { username, password } = await request.json() as { username: string; password: string };
-        if (!username || !password) {
-          return new Response(JSON.stringify({ error: 'username, password required' }), { status: 400, headers });
-        }
+  return c.json({ ok: true, username, token });
+});
 
-        const existing = await env.DB.prepare('SELECT id FROM accounts WHERE username = ?').bind(username).first();
-        if (existing) {
-          return new Response(JSON.stringify({ error: '이미 등록된 계정입니다' }), { status: 409, headers });
-        }
+app.post('/api/account/login', async (c) => {
+  const env = c.env;
+  const { username, password, rememberMe } = await c.req.json() as { username: string; password: string; rememberMe?: boolean };
+  if (!username || !password) {
+    return c.json({ error: 'username, password required' }, 400);
+  }
+  const row = await env.DB.prepare('SELECT password_hash FROM accounts WHERE username = ?').bind(username).first<{ password_hash: string }>();
+  if (!row) {
+    return c.json({ ok: false, error: '계정을 찾을 수 없습니다' }, 404);
+  }
+  const valid = await verifyPassword(password, row.password_hash);
+  if (!valid) {
+    return c.json({ ok: false, error: '비밀번호가 일치하지 않습니다' }, 401);
+  }
+  const token = generateToken();
+  const days = rememberMe ? 30 : 7;
+  const expiresAt = Date.now() + days * 24 * 60 * 60 * 1000;
+  await env.DB.prepare(
+    'INSERT OR REPLACE INTO sessions (token, username, expires_at, created_at) VALUES (?, ?, ?, ?)',
+  ).bind(token, username, expiresAt, Date.now()).run();
+  return c.json({ ok: true, username, token });
+});
 
-        const hash = await hashPassword(password);
-        await env.DB.prepare('INSERT INTO accounts (username, password_hash) VALUES (?, ?)').bind(username, hash).run();
+app.post('/api/account/logout', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (auth && auth.startsWith('Bearer ')) {
+    await c.env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(auth.slice(7)).run();
+  }
+  return c.json({ ok: true });
+});
 
-        // Auto-login after register
-        const token = generateToken();
-        const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
-        await env.DB.prepare(
-          'INSERT INTO sessions (token, username, expires_at, created_at) VALUES (?, ?, ?, ?)'
-        ).bind(token, username, expiresAt, Date.now()).run();
+app.get('/api/account/me', async (c) => {
+  const user = await getAuthUser(c.req.raw, c.env);
+  if (!user) return c.json({ error: '인증이 필요합니다' }, 401);
+  return c.json({ ok: true, username: user.username });
+});
 
-        return new Response(JSON.stringify({ ok: true, username, token }), { headers });
-      }
+app.get('/api/account/list', async (c) => {
+  const user = await getAuthUser(c.req.raw, c.env);
+  if (!user) return c.json({ error: '인증이 필요합니다' }, 401);
+  const rows = await c.env.DB.prepare(
+    'SELECT id, username, created_at FROM accounts WHERE username = ? ORDER BY created_at DESC',
+  ).bind(user.username).all();
+  return c.json({ ok: true, accounts: rows.results });
+});
 
-      if (url.pathname === '/api/account/login' && request.method === 'POST') {
-        const { username, password, rememberMe } = await request.json() as { username: string; password: string; rememberMe?: boolean };
-        if (!username || !password) {
-          return new Response(JSON.stringify({ error: 'username, password required' }), { status: 400, headers });
-        }
-        const row = await env.DB.prepare('SELECT password_hash FROM accounts WHERE username = ?').bind(username).first<{ password_hash: string }>();
-        if (!row) {
-          return new Response(JSON.stringify({ ok: false, error: '계정을 찾을 수 없습니다' }), { status: 404, headers });
-        }
-        const valid = await verifyPassword(password, row.password_hash);
-        if (!valid) {
-          return new Response(JSON.stringify({ ok: false, error: '비밀번호가 일치하지 않습니다' }), { status: 401, headers });
-        }
-        const token = generateToken();
-        const days = rememberMe ? 30 : 7;
-        const expiresAt = Date.now() + days * 24 * 60 * 60 * 1000;
-        await env.DB.prepare(
-          'INSERT OR REPLACE INTO sessions (token, username, expires_at, created_at) VALUES (?, ?, ?, ?)'
-        ).bind(token, username, expiresAt, Date.now()).run();
-        return new Response(JSON.stringify({ ok: true, username, token }), { headers });
-      }
+app.post('/api/account/delete', async (c) => {
+  const user = await getAuthUser(c.req.raw, c.env);
+  if (!user) return c.json({ error: '인증이 필요합니다' }, 401);
+  const { username } = await c.req.json() as { username: string };
+  if (username !== user.username) {
+    return c.json({ error: '자신의 계정만 삭제할 수 있습니다' }, 403);
+  }
+  await c.env.DB.prepare('DELETE FROM accounts WHERE username = ?').bind(username).run();
+  return c.json({ ok: true });
+});
 
-      if (url.pathname === '/api/account/logout' && request.method === 'POST') {
-        const auth = request.headers.get('Authorization');
-        if (auth && auth.startsWith('Bearer ')) {
-          await env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(auth.slice(7)).run();
-        }
-        return new Response(JSON.stringify({ ok: true }), { headers });
-      }
+app.post('/api/account/verify', async (c) => {
+  const env = c.env;
+  const { username, password } = await c.req.json() as { username: string; password: string };
+  const row = await env.DB.prepare('SELECT password_hash FROM accounts WHERE username = ?').bind(username).first<{ password_hash: string }>();
+  if (!row) {
+    return c.json({ ok: false, error: '계정을 찾을 수 없습니다' }, 404);
+  }
+  const valid = await verifyPassword(password, row.password_hash);
+  return c.json({ ok: valid });
+});
 
-      if (url.pathname === '/api/account/me' && request.method === 'GET') {
-        const authResult = await requireAuth(request, env);
-        if (authResult instanceof Response) return authResult;
-        return new Response(JSON.stringify({ ok: true, username: authResult.username }), { headers });
-      }
+// === Location Routes ===
 
-      if (url.pathname === '/api/account/list' && request.method === 'GET') {
-        const authResult = await requireAuth(request, env);
-        if (authResult instanceof Response) return authResult;
-        const rows = await env.DB.prepare(
-          'SELECT id, username, created_at FROM accounts WHERE username = ? ORDER BY created_at DESC'
-        ).bind(authResult.username).all();
-        return new Response(JSON.stringify({ ok: true, accounts: rows.results }), { headers });
-      }
+app.get('/api/location', async (c) => {
+  const user = await getAuthUser(c.req.raw, c.env);
+  if (!user) return c.json({ error: '인증이 필요합니다' }, 401);
+  const row = await c.env.DB.prepare(
+    'SELECT lat, lng, label FROM target_locations WHERE username = ?',
+  ).bind(user.username).first<{ lat: number; lng: number; label: string | null }>();
+  return c.json({ ok: true, location: row || null });
+});
 
-      if (url.pathname === '/api/account/delete' && request.method === 'POST') {
-        const authResult = await requireAuth(request, env);
-        if (authResult instanceof Response) return authResult;
-        const { username } = await request.json() as { username: string };
-        if (username !== authResult.username) {
-          return new Response(JSON.stringify({ error: '자신의 계정만 삭제할 수 있습니다' }), { status: 403, headers });
-        }
-        await env.DB.prepare('DELETE FROM accounts WHERE username = ?').bind(username).run();
-        return new Response(JSON.stringify({ ok: true }), { headers });
-      }
+app.put('/api/location', async (c) => {
+  const user = await getAuthUser(c.req.raw, c.env);
+  if (!user) return c.json({ error: '인증이 필요합니다' }, 401);
+  const { lat, lng, label } = await c.req.json() as { lat: number; lng: number; label?: string };
+  if (typeof lat !== 'number' || typeof lng !== 'number') {
+    return c.json({ error: 'lat, lng required' }, 400);
+  }
+  await c.env.DB.prepare(
+    'INSERT OR REPLACE INTO target_locations (username, lat, lng, label, updated_at) VALUES (?, ?, ?, ?, ?)',
+  ).bind(user.username, lat, lng, label || null, Date.now()).run();
+  return c.json({ ok: true });
+});
 
-      if (url.pathname === '/api/account/verify' && request.method === 'POST') {
-        const { username, password } = await request.json() as { username: string; password: string };
-        const row = await env.DB.prepare('SELECT password_hash FROM accounts WHERE username = ?').bind(username).first<{ password_hash: string }>();
-        if (!row) {
-          return new Response(JSON.stringify({ ok: false, error: '계정을 찾을 수 없습니다' }), { status: 404, headers });
-        }
-        const valid = await verifyPassword(password, row.password_hash);
-        return new Response(JSON.stringify({ ok: valid }), { headers });
-      }
+// === Inspection Rules Routes ===
 
-      // === Location Routes ===
+app.get('/api/inspection-rules', async (c) => {
+  const part = c.req.query('part');
+  let sql = 'SELECT id, name, defects, r2_image_url as imageUrl, part FROM inspection_rules ORDER BY name';
+  const params: string[] = [];
+  if (part) {
+    sql = 'SELECT id, name, defects, r2_image_url as imageUrl, part FROM inspection_rules WHERE part = ? ORDER BY name';
+    params.push(part);
+  }
+  const rows = await c.env.DB.prepare(sql).bind(...params).all();
+  return c.json({ ok: true, items: rows.results });
+});
 
-      if (url.pathname === '/api/location' && request.method === 'GET') {
-        const authResult = await requireAuth(request, env);
-        if (authResult instanceof Response) return authResult;
-        const row = await env.DB.prepare(
-          'SELECT lat, lng, label FROM target_locations WHERE username = ?'
-        ).bind(authResult.username).first<{ lat: number; lng: number; label: string | null }>();
-        return new Response(JSON.stringify({ ok: true, location: row || null }), { headers });
-      }
+// === Queue Routes ===
 
-      if (url.pathname === '/api/location' && request.method === 'PUT') {
-        const authResult = await requireAuth(request, env);
-        if (authResult instanceof Response) return authResult;
-        const { lat, lng, label } = await request.json() as { lat: number; lng: number; label?: string };
-        if (typeof lat !== 'number' || typeof lng !== 'number') {
-          return new Response(JSON.stringify({ error: 'lat, lng required' }), { status: 400, headers });
-        }
-        await env.DB.prepare(
-          'INSERT OR REPLACE INTO target_locations (username, lat, lng, label, updated_at) VALUES (?, ?, ?, ?, ?)'
-        ).bind(authResult.username, lat, lng, label || null, Date.now()).run();
-        return new Response(JSON.stringify({ ok: true }), { headers });
-      }
+app.post('/api/slack', async (c) => {
+  const payload: QueuePayload = await c.req.json();
+  return sendToSlack(c.env, payload);
+});
 
-      // === Inspection Rules Routes ===
-
-      if (url.pathname === '/api/inspection-rules' && request.method === 'GET') {
-        const part = url.searchParams.get('part');
-        let sql = 'SELECT id, name, defects, r2_image_url as imageUrl, part FROM inspection_rules ORDER BY name';
-        const params: string[] = [];
-        if (part) {
-          sql = 'SELECT id, name, defects, r2_image_url as imageUrl, part FROM inspection_rules WHERE part = ? ORDER BY name';
-          params.push(part);
-        }
-        const rows = await env.DB.prepare(sql).bind(...params).all();
-        return new Response(JSON.stringify({ ok: true, items: rows.results }), { headers });
-      }
-
-      // === Queue Routes ===
-
-      if (request.method !== 'POST') {
-        return new Response('Method not allowed', { status: 405 });
-      }
-
-      const payload: QueuePayload = await request.json();
-
-      if (url.pathname === '/api/slack' || payload.target === 'slack') {
-        return await sendToSlack(env, payload);
-      }
-
-      if (url.pathname === '/api/sheets' || payload.target === 'sheets') {
-        return await sendToSheets(env, payload);
-      }
-
-      return new Response(JSON.stringify({ error: 'Unknown target' }), { status: 400, headers });
-    } catch (err) {
-      return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers });
-    }
-  },
-};
+app.post('/api/sheets', async (c) => {
+  const payload: QueuePayload = await c.req.json();
+  return sendToSheets(c.env, payload);
+});
 
 // === Password Hashing (Web Crypto API - PBKDF2) ===
 
@@ -279,7 +256,7 @@ async function sendToSlack(env: Env, payload: QueuePayload): Promise<Response> {
 
   return new Response(JSON.stringify({ ok: res.ok }), {
     status: res.ok ? 200 : 502,
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
@@ -298,7 +275,7 @@ async function sendToSheets(env: Env, payload: QueuePayload): Promise<Response> 
 
   return new Response(JSON.stringify({ ok: res.ok }), {
     status: res.ok ? 200 : 502,
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
@@ -371,3 +348,10 @@ function pemToBuffer(pem: string): ArrayBuffer {
   for (let i = 0; i < binary.length; i++) buffer[i] = binary.charCodeAt(i);
   return buffer.buffer;
 }
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    await migrate(env);
+    return app.fetch(request, env);
+  },
+};

@@ -47,3 +47,8 @@ next-env.d.ts
 # ide
 .vscode/
 .idea/
+
+# Worker
+worker/node_modules/
+worker/package-lock.json
+worker/.wrangler/
