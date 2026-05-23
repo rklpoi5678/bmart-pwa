@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchInspectionRules, searchInspectionRules, filterByPart, type InspectionRule } from '@/lib/search';
 
@@ -10,6 +10,8 @@ const PART_OPTIONS = [
   { value: 'frozen', label: '축산' },
 ];
 
+const PAGE_SIZE = 30;
+
 export default function InspectorPage() {
   const { back } = useRouter();
   const [items, setItems] = useState<InspectionRule[]>([]);
@@ -17,6 +19,7 @@ export default function InspectorPage() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [part, setPart] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     fetchInspectionRules()
@@ -34,6 +37,18 @@ export default function InspectorPage() {
     const searched = searchInspectionRules(query);
     return filterByPart(searched, part);
   }, [query, part]);
+
+  // Reset visible count when filter changes
+  const prevFilter = useRef({ query, part });
+  useEffect(() => {
+    if (prevFilter.current.query !== query || prevFilter.current.part !== part) {
+      prevFilter.current = { query, part };
+      setVisibleCount(PAGE_SIZE);
+    }
+  }, [query, part]);
+
+  const visible = results.slice(0, visibleCount);
+  const hasMore = visibleCount < results.length;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -84,9 +99,18 @@ export default function InspectorPage() {
         {!loading && !error && (
           <>
             <p className="text-sm text-slate">{results.length}개 항목</p>
-            {results.map((item) => (
+            {visible.map((item) => (
               <InspectorCard key={item.id} item={item} />
             ))}
+            {hasMore && (
+              <button
+                type="button"
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                className="w-full py-3 text-sm text-primary bg-canvas rounded-lg border border-hairline active:bg-surface"
+              >
+                더 보기 ({results.length - visibleCount}개 남음)
+              </button>
+            )}
           </>
         )}
       </div>
@@ -94,7 +118,7 @@ export default function InspectorPage() {
   );
 }
 
-function InspectorCard({ item }: { item: InspectionRule }) {
+const InspectorCard = memo(function InspectorCard({ item }: { item: InspectionRule }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -122,7 +146,7 @@ function InspectorCard({ item }: { item: InspectionRule }) {
         <div className="mt-2 pt-2 border-t border-hairline-soft">
           {item.imageUrl && (
             <img
-              src={item.imageUrl}
+              src={encodeURI(item.imageUrl)}
               alt={`${item.name} 기준 이미지`}
               className="w-full max-h-48 object-contain rounded border border-hairline mb-2"
               loading="lazy"
@@ -133,4 +157,4 @@ function InspectorCard({ item }: { item: InspectionRule }) {
       )}
     </button>
   );
-}
+});

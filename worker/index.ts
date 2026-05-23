@@ -22,7 +22,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use(
   '/api/*',
   cors({
-    origin: 'https://bmark-pwa.pages.dev',
+    origin: ['https://bmark-pwa.pages.dev', 'https://bmark-proxy.yoon-gi.workers.dev'],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     maxAge: 86400,

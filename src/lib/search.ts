@@ -24,7 +24,7 @@ export function initSearch(items: InspectionRule[]): void {
 }
 
 export async function fetchInspectionRules(): Promise<InspectionRule[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_WORKER_URL || 'https://bmark-proxy.yoon-gi.workers.dev';
+  const baseUrl = process.env.NEXT_PUBLIC_WORKER_URL || 'https://bmark-proxy.rklpoi5678.workers.dev';
   const res = await fetch(`${baseUrl}/api/inspection-rules`);
   const json = await res.json() as { ok: boolean; items: InspectionRule[] };
   if (!json.ok) throw new Error('inspection rules fetch failed');
