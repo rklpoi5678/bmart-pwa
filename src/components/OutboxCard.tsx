@@ -8,6 +8,7 @@ import { deleteItem, updateItemStatus } from '@/lib/queue';
 import { getMode, submitToApi } from '@/lib/api';
 import { useState } from 'react';
 import Image from 'next/image';
+import { Send, Trash2, RefreshCw, Loader2 } from 'lucide-react';
 
 interface OutboxCardProps {
   item: QueueItem;
@@ -51,58 +52,92 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
     onRefresh();
   };
 
+  const title =
+    item.type === 'rack' && item.data.rackNumber
+      ? `랙검사 — ${item.data.rackNumber}${item.data.category === 'meat' ? ' (수축산)' : ''}`
+      : TYPE_LABELS[item.type];
+
+  const dateStr = new Date(item.createdAt).toLocaleString('ko-KR', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+
   return (
-    <div className="bg-canvas rounded-lg border border-hairline p-4 space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="font-medium text-ink">
-          {item.type === 'rack' && item.data.rackNumber
-            ? `랙검사 — ${item.data.rackNumber}${item.data.category === 'meat' ? ' (수축산)' : ''}`
-            : TYPE_LABELS[item.type]}
-        </span>
-        <StatusBadge status={item.status} />
-      </div>
-      <p className="text-sm text-slate">
-        {new Date(item.createdAt).toLocaleString('ko-KR')}
-      </p>
-      {item.note && <p className="text-sm text-charcoal">{item.note}</p>}
-      {item.error && <p className="text-sm text-error">{item.error}</p>}
-      {item.photos.length > 0 && (
-        <div className="flex gap-1">
-          {item.photos.slice(0, 3).map((p, i) => (
-            <Image key={i} src={p} alt="" width={48} height={48} className="size-12 rounded-lg object-cover" />
-          ))}
-          {item.photos.length > 3 && (
-            <span className="size-12 rounded-lg bg-surface flex items-center justify-center text-xs text-steel">
-              +{item.photos.length - 3}
-            </span>
+    <div className="bg-canvas rounded-xl shadow-sm p-3.5 flex gap-3">
+      {/* Left: thumbnail or placeholder */}
+      {item.photos.length > 0 ? (
+        <div className="shrink-0">
+          <Image
+            src={item.photos[0]}
+            alt=""
+            width={56}
+            height={56}
+            className="size-14 rounded-lg object-cover"
+          />
+          {item.photos.length > 1 && (
+            <p className="text-[10px] text-steel text-center mt-0.5">+{item.photos.length - 1}</p>
           )}
         </div>
+      ) : (
+        <div className="shrink-0 size-14 rounded-lg bg-surface flex items-center justify-center">
+          <span className="text-steel text-lg">
+            {item.type === 'rack' ? '🏗️' : item.type === 'freshness' ? '🔍' : '⏰'}
+          </span>
+        </div>
       )}
-      <div className="flex gap-2 pt-1">
-        {item.status === 'pending' && (
-          <>
-            {mode === 'local' ? (
-              <button type="button" onClick={handleShare} className="flex-1 text-sm bg-primary text-on-dark rounded py-1.5">
-                Slack 으로 공유
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleApiSend}
-                disabled={sending}
-                className="flex-1 text-sm bg-primary text-on-dark rounded py-1.5 disabled:opacity-50"
-              >
-                {sending ? '전송 중...' : '서버로 전송'}
-              </button>
-            )}
-          </>
+
+      {/* Center: info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <p className="font-semibold text-ink truncate">{title}</p>
+          <StatusBadge status={item.status} />
+        </div>
+        <p className="text-xs text-steel">{dateStr}</p>
+        {item.note && (
+          <p className="text-xs text-charcoal mt-1 line-clamp-2">{item.note}</p>
         )}
-        {item.status === 'failed' && mode === 'api' && (
-          <button type="button" onClick={handleApiSend} disabled={sending} className="flex-1 text-sm bg-brand-orange text-on-dark rounded py-1.5">
-            {sending ? '재시도 중...' : '재시도'}
+        {item.error && (
+          <p className="text-xs text-error mt-1 line-clamp-1">{item.error}</p>
+        )}
+      </div>
+
+      {/* Right: actions */}
+      <div className="shrink-0 flex flex-col items-end justify-between">
+        <div className="flex items-center gap-1">
+          {item.status === 'pending' && (
+            <button
+              type="button"
+              onClick={mode === 'local' ? handleShare : handleApiSend}
+              disabled={sending}
+              className="p-1.5 rounded-lg text-slate hover:text-primary hover:bg-card-tint-lavender transition-colors"
+              aria-label={mode === 'local' ? 'Slack으로 공유' : '서버로 전송'}
+            >
+              {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            </button>
+          )}
+          {item.status === 'failed' && mode === 'api' && (
+            <button
+              type="button"
+              onClick={handleApiSend}
+              disabled={sending}
+              className="p-1.5 rounded-lg text-brand-orange hover:bg-card-tint-peach transition-colors"
+              aria-label="재시도"
+            >
+              {sending ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="p-1.5 rounded-lg text-steel hover:text-error hover:bg-card-tint-rose transition-colors"
+            aria-label="삭제"
+          >
+            <Trash2 size={16} />
           </button>
-        )}
-        <button type="button" onClick={handleDelete} className="text-sm text-error px-2">삭제</button>
+        </div>
       </div>
     </div>
   );

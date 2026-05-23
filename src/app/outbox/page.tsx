@@ -6,6 +6,7 @@ import OutboxCard from '@/components/OutboxCard';
 import { getQueueItems } from '@/lib/queue';
 import { shareAllItems } from '@/lib/share';
 import type { QueueItem, QueueItemStatus } from '@/db/schema';
+import { ArrowLeft, Send } from 'lucide-react';
 
 const TABS: { key: QueueItemStatus | 'all'; label: string }[] = [
   { key: 'all', label: '전체' },
@@ -18,7 +19,7 @@ export default function OutboxPage() {
   const { push } = useRouter();
   const [items, setItems] = useState<QueueItem[]>([]);
   const [tab, setTab] = useState<QueueItemStatus | 'all'>('all');
-  const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -28,38 +29,46 @@ export default function OutboxPage() {
   }, [tab]);
 
   const handleShareAll = async () => {
+    setSending(true);
     const allPending = await getQueueItems('pending');
     const ok = await shareAllItems(allPending);
-    if (ok) {
-      setCopied(true);
-      setTimeout(() => { setCopied(false); setTab('all'); }, 1500);
-    }
+    if (ok) setTab('all');
+    setSending(false);
   };
+
+  const pendingCount = items.filter((i) => i.status === 'pending').length;
 
   return (
     <div className="min-h-screen bg-surface">
-      <div className="sticky top-0 bg-canvas border-b border-hairline px-4 py-3">
-        <div className="flex items-center gap-3 mb-3">
-          <button type="button" onClick={() => push('/')} className="text-2xl">←</button>
-          <h1 className="text-xl font-semibold text-ink">아웃박스</h1>
-        </div>
-        <div className="flex gap-1 bg-surface rounded-lg p-1">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                tab === t.key ? 'bg-canvas shadow text-ink' : 'text-slate'
-              }`}
-            >
-              {t.label}
+      <div className="sticky top-0 bg-canvas border-b border-hairline z-10">
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-3 mb-3">
+            <button type="button" onClick={() => push('/')} className="p-1 -ml-1 rounded-lg text-ink hover:bg-surface transition-colors" aria-label="뒤로">
+              <ArrowLeft size={22} />
             </button>
-          ))}
+            <h1 className="text-xl font-semibold text-ink">아웃박스</h1>
+            {items.length > 0 && (
+              <span className="ml-auto text-xs text-steel">{items.length}개</span>
+            )}
+          </div>
+          <div className="flex gap-1 bg-surface rounded-lg p-1">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  tab === t.key ? 'bg-canvas shadow-sm text-ink' : 'text-slate'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-2 pb-24">
         {items.length === 0 ? (
           <p className="text-center text-steel py-12">항목이 없습니다</p>
         ) : (
@@ -67,14 +76,16 @@ export default function OutboxPage() {
         )}
       </div>
 
-      {items.some((i) => i.status === 'pending') && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-canvas border-t border-hairline max-w-lg mx-auto">
+      {pendingCount > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 max-w-lg mx-auto">
           <button
             type="button"
             onClick={handleShareAll}
-            className="w-full bg-primary text-on-dark rounded-lg py-3 font-medium"
+            disabled={sending}
+            className="w-full bg-primary text-on-dark rounded-xl py-3.5 font-semibold shadow-lg active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            {copied ? '공유 완료 ✓' : '대기 항목 전체 공유'}
+            <Send size={18} />
+            {sending ? '전송 중...' : `대기 항목 ${pendingCount}건 전체 전송`}
           </button>
         </div>
       )}

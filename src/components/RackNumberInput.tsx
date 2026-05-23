@@ -14,7 +14,6 @@ const RACKS = Array.from({ length: 50 }, (_, i) => String(i + 1).padStart(3, '0'
 
 export default function RackNumberInput({ value, onChange }: RackNumberInputProps) {
   const parse = (v: string) => {
-    // format: C02-01-003 or 02-01-003
     const parts = v.split('-');
     const first = parts[0] || '';
     const isLetter = /^[A-F]$/.test(first);
@@ -42,56 +41,54 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
 
   if (manual) {
     return (
-      <div>
-        <label htmlFor="rack-number-manual" className="block text-sm font-medium text-slate mb-1">랙번호</label>
-        <div className="flex gap-2">
-          <input
-            id="rack-number-manual"
-            type="text"
-            required
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="flex-1 border border-hairline-strong rounded-lg px-3 py-2 text-base font-mono bg-canvas text-ink"
-            placeholder="C02-01-003"
-          />
+      <div className="bg-canvas rounded-xl border border-hairline shadow-sm p-4">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium text-steel uppercase tracking-wide">랙번호</span>
           <button
             type="button"
             onClick={() => setManual(false)}
-            className="text-xs text-link-blue px-2 whitespace-nowrap"
+            className="text-xs text-link-blue hover:bg-card-tint-sky rounded-lg px-2 py-0.5 transition-colors"
           >
             선택모드
           </button>
         </div>
+        <input
+          id="rack-number-manual"
+          type="text"
+          required
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full border border-hairline-strong rounded-lg px-3 py-2.5 text-base font-mono bg-surface text-ink placeholder:text-stone"
+          placeholder="C02-01-003"
+        />
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-medium text-slate">랙번호</span>
-        <button
-          type="button"
-          onClick={() => setManual(true)}
-          className="text-xs text-link-blue"
-        >
-          직접입력
-        </button>
-      </div>
-
-      {/* Letter selector */}
-      <div className="mb-2">
-        <p className="text-xs text-steel mb-1">구역 문자</p>
-        <div className="flex gap-1">
+    <div className="space-y-3">
+      {/* Letter selector — floating card */}
+      <div className="bg-canvas rounded-xl border border-hairline shadow-sm p-3.5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-steel uppercase tracking-wide">구역 문자</span>
+          <button
+            type="button"
+            onClick={() => setManual(true)}
+            className="text-xs text-link-blue hover:bg-card-tint-sky rounded-lg px-2 py-0.5 transition-colors"
+          >
+            직접입력
+          </button>
+        </div>
+        <div className="flex gap-1.5">
           {ZONE_LETTERS.map((l) => (
             <button
               key={l}
               type="button"
               onClick={() => update('letter', l)}
-              className={`flex-1 py-2 rounded text-sm font-medium border-2 ${
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
                 parts.letter === l
-                  ? 'border-primary bg-card-tint-lavender text-primary'
-                  : 'border-hairline text-slate'
+                  ? 'border-primary bg-card-tint-lavender text-primary shadow-sm'
+                  : 'border-hairline text-slate hover:border-hairline-strong'
               }`}
             >
               {l}
@@ -100,10 +97,10 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
           <button
             type="button"
             onClick={() => update('letter', '')}
-            className={`flex-1 py-2 rounded text-xs font-medium border-2 ${
+            className={`px-3 py-2.5 rounded-xl text-xs font-medium border-2 transition-all ${
               !parts.letter
-                ? 'border-primary bg-card-tint-lavender text-primary'
-                : 'border-hairline text-slate'
+                ? 'border-primary bg-card-tint-lavender text-primary shadow-sm'
+                : 'border-hairline text-steel hover:border-hairline-strong'
             }`}
           >
             없음
@@ -111,49 +108,45 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
         </div>
       </div>
 
+      {/* Zone / Row / Rack — 3 cards in a row */}
       <div className="flex gap-1.5">
-        {/* Zone Number */}
-        <div className="flex-1">
-          <p className="text-xs text-steel mb-1">구역</p>
+        <div className="flex-1 bg-canvas rounded-xl border border-hairline shadow-sm p-2.5 text-center">
+          <span className="text-xs font-medium text-steel uppercase tracking-wide block mb-1.5">구역</span>
           <select
             value={parts.zone}
             onChange={(e) => update('zone', e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg p-2 text-sm bg-canvas text-ink"
+            className="w-full border border-hairline rounded-lg px-1 py-2 text-sm font-mono font-semibold text-center bg-surface text-ink appearance-none cursor-pointer"
             aria-label="구역"
           >
-            <option value="">선택</option>
+            <option value="">—</option>
             {ZONE_NUMBERS.map((z) => (
               <option key={z} value={z}>{z}</option>
             ))}
           </select>
         </div>
-
-        {/* Row */}
-        <div className="flex-1">
-          <p className="text-xs text-steel mb-1">열</p>
+        <div className="flex-1 bg-canvas rounded-xl border border-hairline shadow-sm p-2.5 text-center">
+          <span className="text-xs font-medium text-steel uppercase tracking-wide block mb-1.5">열</span>
           <select
             value={parts.row}
             onChange={(e) => update('row', e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg p-2 text-sm bg-canvas text-ink"
+            className="w-full border border-hairline rounded-lg px-1 py-2 text-sm font-mono font-semibold text-center bg-surface text-ink appearance-none cursor-pointer"
             aria-label="열"
           >
-            <option value="">선택</option>
+            <option value="">—</option>
             {ROWS.map((r) => (
               <option key={r} value={r}>{r}</option>
             ))}
           </select>
         </div>
-
-        {/* Rack */}
-        <div className="flex-1">
-          <p className="text-xs text-steel mb-1">랙</p>
+        <div className="flex-1 bg-canvas rounded-xl border border-hairline shadow-sm p-2.5 text-center">
+          <span className="text-xs font-medium text-steel uppercase tracking-wide block mb-1.5">랙</span>
           <select
             value={parts.rack}
             onChange={(e) => update('rack', e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg p-2 text-sm bg-canvas text-ink"
+            className="w-full border border-hairline rounded-lg px-1 py-2 text-sm font-mono font-semibold text-center bg-surface text-ink appearance-none cursor-pointer"
             aria-label="랙"
           >
-            <option value="">선택</option>
+            <option value="">—</option>
             {RACKS.map((r) => (
               <option key={r} value={r}>{r}</option>
             ))}
@@ -161,8 +154,11 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
         </div>
       </div>
 
+      {/* Preview */}
       {value && (
-        <p className="mt-2 text-center font-mono text-lg font-semibold text-ink">{value}</p>
+        <div className="bg-brand-navy rounded-xl px-4 py-3 text-center">
+          <p className="font-mono text-xl font-bold text-on-dark tracking-widest">{value}</p>
+        </div>
       )}
     </div>
   );
