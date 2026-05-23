@@ -29,6 +29,7 @@ export default function LocationMap({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const circleRef = useRef<L.Circle | null>(null);
+  const dragEndRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -61,20 +62,24 @@ export default function LocationMap({
     }
 
     if (draggable && onMarkerDrag) {
-      marker.on('dragend', () => {
+      const handler = () => {
         const pos = marker.getLatLng();
         const newPos: LatLng = { lat: pos.lat, lng: pos.lng };
-        if (circleRef.current) {
-          circleRef.current.setLatLng([newPos.lat, newPos.lng]);
-        }
+        if (circleRef.current) circleRef.current.setLatLng([newPos.lat, newPos.lng]);
         onMarkerDrag(newPos);
-      });
+      };
+      marker.on('dragend', handler);
+      dragEndRef.current = handler;
     }
 
     mapInstanceRef.current = map;
     markerRef.current = marker;
 
     return () => {
+      if (dragEndRef.current && markerRef.current) {
+        markerRef.current.off('dragend', dragEndRef.current);
+        dragEndRef.current = null;
+      }
       map.remove();
       mapInstanceRef.current = null;
       markerRef.current = null;
@@ -93,6 +98,7 @@ export default function LocationMap({
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setView([markerPosition.lat, markerPosition.lng]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [markerPosition.lat, markerPosition.lng]);
 
   return (
