@@ -189,6 +189,20 @@ export default {
         return new Response(JSON.stringify({ ok: true }), { headers });
       }
 
+      // === Inspection Rules Routes ===
+
+      if (url.pathname === '/api/inspection-rules' && request.method === 'GET') {
+        const part = url.searchParams.get('part');
+        let sql = 'SELECT id, name, defects, r2_image_url as imageUrl, part FROM inspection_rules ORDER BY name';
+        const params: string[] = [];
+        if (part) {
+          sql = 'SELECT id, name, defects, r2_image_url as imageUrl, part FROM inspection_rules WHERE part = ? ORDER BY name';
+          params.push(part);
+        }
+        const rows = await env.DB.prepare(sql).bind(...params).all();
+        return new Response(JSON.stringify({ ok: true, items: rows.results }), { headers });
+      }
+
       // === Queue Routes ===
 
       if (request.method !== 'POST') {
