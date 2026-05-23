@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 import { compressFile } from '@/lib/compress';
 
 interface PhotoCaptureProps {
@@ -19,16 +20,18 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
     if (!files) return;
 
     setLoading(true);
-    const newPhotos: string[] = [];
+    const fileArr = Array.from(files);
+    const remaining = maxPhotos - photos.length;
+    const toProcess = fileArr.slice(0, remaining);
 
-    for (const file of Array.from(files)) {
-      if (photos.length + newPhotos.length >= maxPhotos) break;
-      setCompressing(newPhotos.length + 1);
-      const compressed = await compressFile(file);
-      newPhotos.push(compressed);
-    }
+    const compressed = await Promise.all(
+      toProcess.map((file, i) => (async () => {
+        setCompressing(i + 1);
+        return compressFile(file);
+      })())
+    );
 
-    onChange([...photos, ...newPhotos]);
+    onChange([...photos, ...compressed]);
     setLoading(false);
     setCompressing(0);
     if (inputRef.current) inputRef.current.value = '';
@@ -40,15 +43,16 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-slate">사진 ({photos.length}/{maxPhotos})</label>
+      <span className="text-sm font-medium text-slate">사진 ({photos.length}/{maxPhotos})</span>
       <div className="flex gap-2 flex-wrap">
         {photos.map((photo, i) => (
-          <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-hairline">
-            <img src={photo} alt={`사진 ${i + 1}`} className="w-full h-full object-cover" />
+          <div key={`photo-${i}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-hairline">
+            <Image src={photo} alt={`사진 ${i + 1}`} fill className="object-cover" sizes="80px" />
             <button
               type="button"
               onClick={() => remove(i)}
-              className="absolute top-0.5 right-0.5 bg-brand-navy/60 text-on-dark rounded-full w-5 h-5 text-xs flex items-center justify-center"
+              aria-label={`사진 ${i + 1} 삭제`}
+              className="absolute top-0.5 right-0.5 bg-brand-navy/60 text-on-dark rounded-full size-5 text-xs flex items-center justify-center"
             >
               ✕
             </button>
@@ -60,6 +64,7 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
             onClick={() => inputRef.current?.click()}
             disabled={loading}
             className="w-20 h-20 border-2 border-dashed border-hairline rounded-lg flex items-center justify-center text-steel hover:border-hairline-strong"
+            aria-label="사진 추가"
           >
             {loading ? `${compressing}...` : '+'}
           </button>
