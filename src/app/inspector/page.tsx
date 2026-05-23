@@ -1,27 +1,39 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { searchStandards, filterByCategory } from '@/lib/search';
-import { CATEGORY_OPTIONS } from '@/db/schema';
-import { SEVERITY_LABEL } from '@/data/standards';
-import type { InspectionItem, Severity } from '@/data/standards';
+import { fetchInspectionRules, searchInspectionRules, filterByPart, type InspectionRule } from '@/lib/search';
 
-const SEVERITY_COLORS: Record<Severity, string> = {
-  normal: 'bg-card-tint-mint text-brand-green',
-  caution: 'bg-card-tint-yellow text-brand-yellow',
-  discard: 'bg-card-tint-rose text-brand-orange',
-};
+const PART_OPTIONS = [
+  { value: null, label: '전체' },
+  { value: 'fresh', label: '신선' },
+  { value: 'frozen', label: '축산' },
+];
 
 export default function InspectorPage() {
   const { back } = useRouter();
+  const [items, setItems] = useState<InspectionRule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<string | null>(null);
+  const [part, setPart] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchInspectionRules()
+      .then((data) => {
+        setItems(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(String(err));
+        setLoading(false);
+      });
+  }, []);
 
   const results = useMemo(() => {
-    const searched = searchStandards(query);
-    return filterByCategory(searched, category);
-  }, [query, category]);
+    const searched = searchInspectionRules(query);
+    return filterByPart(searched, part);
+  }, [query, part]);
 
   return (
     <div className="min-h-screen bg-surface">
@@ -31,62 +43,58 @@ export default function InspectorPage() {
           <div className="flex items-center gap-3 mb-3">
             <button type="button" onClick={() => back()} className="text-2xl">←</button>
             <h1 className="text-xl font-semibold text-ink">검품기준서</h1>
+            {items.length > 0 && (
+              <span className="ml-auto text-xs text-steel">{items.length}건</span>
+            )}
           </div>
           <input
             id="inspector-search"
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="품명 또는 검사 항목 검색..."
+            placeholder="품명 검색..."
             className="w-full border border-hairline-strong rounded-lg px-3 py-2.5 text-base bg-canvas text-ink"
-            aria-label="품명 또는 검사 항목 검색"
+            aria-label="품명 검색"
           />
           <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1">
-            <button
-              type="button"
-              onClick={() => setCategory(null)}
-              className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                !category ? 'bg-primary text-on-dark' : 'bg-surface text-slate'
-              }`}
-            >
-              전체
-            </button>
-            {CATEGORY_OPTIONS.map((c) => (
+            {PART_OPTIONS.map((opt) => (
               <button
-                key={c}
+                key={opt.label}
                 type="button"
-                onClick={() => setCategory(category === c ? null : c)}
+                onClick={() => setPart(opt.value)}
                 className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                  category === c ? 'bg-primary text-on-dark' : 'bg-surface text-slate'
+                  part === opt.value ? 'bg-primary text-on-dark' : 'bg-surface text-slate'
                 }`}
               >
-                {c}
+                {opt.label}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Results */}
+      {/* Body */}
       <div className="p-4 space-y-3">
-        <a
-          href="https://drive.google.com/drive/u/2/folders/19K39pgKuojPHyEZNqQFutY0anhZkBDgd"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block bg-card-tint-sky border border-hairline rounded-lg p-3 text-sm text-link-blue text-center"
-        >
-          전체 검품기준표 보기 (Google Drive)
-        </a>
-        <p className="text-sm text-slate">{results.length}개 항목</p>
-        {results.map((item) => (
-          <InspectorCard key={item.id} item={item} />
-        ))}
+        {loading && (
+          <p className="text-sm text-slate text-center py-8">불러오는 중...</p>
+        )}
+        {error && (
+          <p className="text-sm text-red-500 text-center py-8">오류: {error}</p>
+        )}
+        {!loading && !error && (
+          <>
+            <p className="text-sm text-slate">{results.length}개 항목</p>
+            {results.map((item) => (
+              <InspectorCard key={item.id} item={item} />
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function InspectorCard({ item }: { item: InspectionItem }) {
+function InspectorCard({ item }: { item: InspectionRule }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -98,18 +106,29 @@ function InspectorCard({ item }: { item: InspectionItem }) {
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs text-steel">{item.category}</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${SEVERITY_COLORS[item.severity]}`}>
-              {SEVERITY_LABEL[item.severity]}
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+              item.part === 'fresh'
+                ? 'bg-card-tint-mint text-brand-green'
+                : 'bg-blue-100 text-blue-600'
+            }`}>
+              {item.part === 'fresh' ? '신선' : '축산'}
             </span>
           </div>
-          <p className="font-medium text-ink">{item.product}: {item.checkPoint}</p>
+          <p className="font-medium text-ink">{item.name}</p>
         </div>
         <span className="text-steel text-sm">{expanded ? '▲' : '▼'}</span>
       </div>
-      {expanded && (
+      {expanded && item.defects && (
         <div className="mt-2 pt-2 border-t border-hairline-soft">
-          <p className="text-sm text-charcoal">{item.standard}</p>
+          {item.imageUrl && (
+            <img
+              src={item.imageUrl}
+              alt={`${item.name} 기준 이미지`}
+              className="w-full max-h-48 object-contain rounded border border-hairline mb-2"
+              loading="lazy"
+            />
+          )}
+          <p className="text-sm text-charcoal whitespace-pre-wrap">{item.defects}</p>
         </div>
       )}
     </button>
