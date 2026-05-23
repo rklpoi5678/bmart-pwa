@@ -19,9 +19,7 @@ const WORKER_KEY = 'bmark-worker-name';
 const CHECKOUT_HOUR = 12;
 
 export default function AttendanceForm() {
-  const router = useRouter();
-  const [workerName, setWorkerName] = useState('');
-  const [saved, setSaved] = useState(false);
+  const { back, push } = useRouter();
   const [now, setNow] = useState(new Date());
   const [submitting, setSubmitting] = useState(false);
 
@@ -32,13 +30,10 @@ export default function AttendanceForm() {
   const [inRange, setInRange] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
 
-  useEffect(() => {
-    const stored = localStorage.getItem(WORKER_KEY);
-    if (stored) {
-      setWorkerName(stored);
-      setSaved(true);
-    }
+  const [workerName, setWorkerName] = useState('');
+  const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
     const tick = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(tick);
   }, []);
@@ -108,7 +103,7 @@ export default function AttendanceForm() {
     if (action === 'check-in') {
       launchShiftee();
     }
-    router.push('/');
+    push('/');
   };
 
   const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -117,7 +112,7 @@ export default function AttendanceForm() {
   return (
     <div className="min-h-screen bg-surface p-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.back()} className="text-2xl">←</button>
+        <button type="button" onClick={() => back()} className="text-2xl">←</button>
         <h1 className="text-xl font-semibold text-ink">출퇴근</h1>
       </div>
 
@@ -129,9 +124,10 @@ export default function AttendanceForm() {
       <div className="space-y-4">
         {!saved ? (
           <div>
-            <label className="block text-sm font-medium text-slate mb-1">작업자명 (최초 1회)</label>
+            <label htmlFor="worker-name-input" className="block text-sm font-medium text-slate mb-1">작업자명 (최초 1회)</label>
             <div className="flex gap-2">
               <input
+                id="worker-name-input"
                 type="text"
                 required
                 value={workerName}
@@ -208,6 +204,7 @@ export default function AttendanceForm() {
         </div>
 
         <button
+          type="button"
           onClick={() => handleSubmit('check-in')}
           disabled={submitting || !saved || !inRange}
           className="w-full py-4 rounded-xl font-bold text-lg bg-success text-on-dark disabled:opacity-40 active:scale-[0.98] transition-transform"
@@ -217,6 +214,7 @@ export default function AttendanceForm() {
 
         {inRange && (
           <button
+            type="button"
             onClick={launchShiftee}
             className="w-full py-3 rounded-lg border-2 border-hairline-strong text-slate font-medium text-sm"
           >
@@ -226,6 +224,7 @@ export default function AttendanceForm() {
 
         <div>
           <button
+            type="button"
             onClick={() => handleSubmit('check-out')}
             disabled={submitting || !saved || !canCheckOut}
             className="w-full py-4 rounded-xl font-bold text-lg bg-primary text-on-dark disabled:opacity-40 active:scale-[0.98] transition-transform"

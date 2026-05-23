@@ -68,10 +68,10 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
       {item.photos.length > 0 && (
         <div className="flex gap-1">
           {item.photos.slice(0, 3).map((p, i) => (
-            <img key={i} src={p} alt="" className="w-12 h-12 rounded-lg object-cover" />
+            <img key={i} src={p} alt="" className="size-12 rounded-lg object-cover" />
           ))}
           {item.photos.length > 3 && (
-            <span className="w-12 h-12 rounded-lg bg-surface flex items-center justify-center text-xs text-steel">
+            <span className="size-12 rounded-lg bg-surface flex items-center justify-center text-xs text-steel">
               +{item.photos.length - 3}
             </span>
           )}
@@ -81,11 +81,12 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
         {item.status === 'pending' && (
           <>
             {mode === 'local' ? (
-              <button onClick={handleShare} className="flex-1 text-sm bg-primary text-on-dark rounded py-1.5">
+              <button type="button" onClick={handleShare} className="flex-1 text-sm bg-primary text-on-dark rounded py-1.5">
                 Slack 으로 공유
               </button>
             ) : (
               <button
+                type="button"
                 onClick={handleApiSend}
                 disabled={sending}
                 className="flex-1 text-sm bg-primary text-on-dark rounded py-1.5 disabled:opacity-50"
@@ -96,11 +97,11 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
           </>
         )}
         {item.status === 'failed' && mode === 'api' && (
-          <button onClick={handleApiSend} disabled={sending} className="flex-1 text-sm bg-brand-orange text-on-dark rounded py-1.5">
+          <button type="button" onClick={handleApiSend} disabled={sending} className="flex-1 text-sm bg-brand-orange text-on-dark rounded py-1.5">
             {sending ? '재시도 중...' : '재시도'}
           </button>
         )}
-        <button onClick={handleDelete} className="text-sm text-error px-2">삭제</button>
+        <button type="button" onClick={handleDelete} className="text-sm text-error px-2">삭제</button>
       </div>
     </div>
   );

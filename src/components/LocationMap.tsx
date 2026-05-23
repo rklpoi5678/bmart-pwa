@@ -86,7 +86,7 @@ export default function LocationMap({
       circleRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [center.lat, center.lng, markerPosition.lat, markerPosition.lng, draggable, showRadius, radius, onMarkerDrag]);
 
   useEffect(() => {
     if (markerRef.current) {
@@ -98,7 +98,6 @@ export default function LocationMap({
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setView([markerPosition.lat, markerPosition.lng]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [markerPosition.lat, markerPosition.lng]);
 
   return (

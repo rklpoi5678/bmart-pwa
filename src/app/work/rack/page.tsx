@@ -6,7 +6,7 @@ import RackNumberInput from '@/components/RackNumberInput';
 import { addToQueue, getLastRackNumber, getRackHistory } from '@/lib/queue';
 
 export default function RackForm() {
-  const router = useRouter();
+  const { back, push } = useRouter();
   const [rackNumber, setRackNumber] = useState('');
   const [isMeat, setIsMeat] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -32,13 +32,13 @@ export default function RackForm() {
       note: '',
       createdAt: new Date(),
     });
-    router.push('/');
+    push('/');
   };
 
   return (
     <div className="min-h-screen bg-surface p-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.back()} className="text-2xl">←</button>
+        <button type="button" onClick={() => back()} className="text-2xl">←</button>
         <h1 className="text-xl font-semibold text-ink">랙검사</h1>
       </div>
 
@@ -70,9 +70,9 @@ export default function RackForm() {
         <div className="mt-6">
           <h2 className="text-sm font-medium text-slate mb-2">최근 랙번호</h2>
           <div className="flex flex-wrap gap-2">
-            {history.map((r, i) => (
+            {history.map((r) => (
               <button
-                key={i}
+                key={r}
                 type="button"
                 onClick={() => setRackNumber(r)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-mono border-2 ${

@@ -15,7 +15,7 @@ const TABS: { key: QueueItemStatus | 'all'; label: string }[] = [
 ];
 
 export default function OutboxPage() {
-  const router = useRouter();
+  const { push } = useRouter();
   const [items, setItems] = useState<QueueItem[]>([]);
   const [tab, setTab] = useState<QueueItemStatus | 'all'>('all');
   const [copied, setCopied] = useState(false);
@@ -41,13 +41,14 @@ export default function OutboxPage() {
     <div className="min-h-screen bg-surface">
       <div className="sticky top-0 bg-canvas border-b border-hairline px-4 py-3">
         <div className="flex items-center gap-3 mb-3">
-          <button onClick={() => router.push('/')} className="text-2xl">←</button>
+          <button type="button" onClick={() => push('/')} className="text-2xl">←</button>
           <h1 className="text-xl font-semibold text-ink">아웃박스</h1>
         </div>
         <div className="flex gap-1 bg-surface rounded-lg p-1">
           {TABS.map((t) => (
             <button
               key={t.key}
+              type="button"
               onClick={() => setTab(t.key)}
               className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 tab === t.key ? 'bg-canvas shadow text-ink' : 'text-slate'
@@ -70,6 +71,7 @@ export default function OutboxPage() {
       {items.some((i) => i.status === 'pending') && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-canvas border-t border-hairline max-w-lg mx-auto">
           <button
+            type="button"
             onClick={handleShareAll}
             className="w-full bg-primary text-on-dark rounded-lg py-3 font-medium"
           >

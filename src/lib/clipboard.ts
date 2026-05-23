@@ -34,7 +34,8 @@ export async function copyToClipboard(item: QueueItem): Promise<boolean> {
 }
 
 export async function copyAllPending(items: QueueItem[]): Promise<boolean> {
-  const text = items.filter((i) => i.status === 'pending').map(formatItem).join('\n\n---\n\n');
+  const pending = items.filter((i) => i.status === 'pending');
+  const text = pending.map(formatItem).join('\n\n---\n\n');
   if (!text) return false;
   try {
     await navigator.clipboard.writeText(text);

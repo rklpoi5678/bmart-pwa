@@ -24,14 +24,14 @@ type Summary = Record<QueueItemStatus, number>;
 export default function HomePage() {
   const { push } = useRouter();
   const [summary, setSummary] = useState<Summary>({ pending: 0, sent: 0, failed: 0 });
-  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const installPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     getQueueSummary().then(setSummary);
     setIsOnline(navigator.onLine);
-    if (!localStorage.getItem('bmark-onboarded')) setShowOnboarding(true);
+    setShowOnboarding(!localStorage.getItem('bmark-onboarded'));
 
     const onOnline = () => setIsOnline(true);
     const onOffline = () => setIsOnline(false);

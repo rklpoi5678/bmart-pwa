@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface Step {
   title: string;
@@ -38,11 +38,7 @@ const STEPS: Step[] = [
 
 export default function OnboardingModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
-  const [isIOS, setIsIOS] = useState(false);
-
-  useEffect(() => {
-    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
-  }, []);
+  const [isIOS] = useState(() => /iPad|iPhone|iPod/.test(navigator.userAgent));
 
   const isLast = step === STEPS.length - 1;
 
@@ -75,19 +71,21 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
         <div className="flex gap-3">
           {step > 0 && (
             <button
-              onClick={() => setStep(step - 1)}
+              type="button"
+              onClick={() => setStep((prev) => prev - 1)}
               className="flex-1 py-3 rounded-lg border border-hairline-strong text-charcoal font-medium"
             >
               이전
             </button>
           )}
           <button
+            type="button"
             onClick={() => {
               if (isLast) {
                 localStorage.setItem('bmark-onboarded', '1');
                 onClose();
               } else {
-                setStep(step + 1);
+                setStep((prev) => prev + 1);
               }
             }}
             className="flex-1 py-3 rounded-lg bg-primary text-on-dark font-medium"
@@ -98,6 +96,7 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
 
         {!isLast && (
           <button
+            type="button"
             onClick={() => {
               localStorage.setItem('bmark-onboarded', '1');
               onClose();

@@ -46,7 +46,7 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
       <span className="text-sm font-medium text-slate">사진 ({photos.length}/{maxPhotos})</span>
       <div className="flex gap-2 flex-wrap">
         {photos.map((photo, i) => (
-          <div key={`photo-${i}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-hairline">
+          <div key={photo} className="relative size-20 rounded-lg overflow-hidden border border-hairline">
             <Image src={photo} alt={`사진 ${i + 1}`} fill className="object-cover" sizes="80px" />
             <button
               type="button"
@@ -63,7 +63,7 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={loading}
-            className="w-20 h-20 border-2 border-dashed border-hairline rounded-lg flex items-center justify-center text-steel hover:border-hairline-strong"
+            className="size-20 border-2 border-dashed border-hairline rounded-lg flex items-center justify-center text-steel hover:border-hairline-strong"
             aria-label="사진 추가"
           >
             {loading ? `${compressing}...` : '+'}

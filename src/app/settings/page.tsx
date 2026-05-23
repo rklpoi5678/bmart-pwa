@@ -23,7 +23,7 @@ import {
 const LocationMap = dynamic(() => import('@/components/LocationMap'), { ssr: false });
 
 export default function SettingsPage() {
-  const router = useRouter();
+  const { back, push } = useRouter();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
@@ -101,14 +101,14 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-surface p-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.back()} className="text-2xl">←</button>
+        <button type="button" onClick={() => back()} className="text-2xl">←</button>
         <h1 className="text-xl font-semibold text-ink">설정</h1>
       </div>
 
       <div className="space-y-6">
         {/* Push Notifications */}
         <div>
-          <label className="block text-sm font-medium text-slate mb-2">출퇴근 알림</label>
+          <span className="block text-sm font-medium text-slate mb-2">출퇴근 알림</span>
           {!pushSupported ? (
             <div className="bg-card-tint-yellow border border-hairline rounded-xl p-3">
               <p className="text-sm text-charcoal">이 브라우저는 푸시 알림을 지원하지 않습니다.</p>
@@ -116,6 +116,7 @@ export default function SettingsPage() {
             </div>
           ) : (
             <button
+              type="button"
               onClick={handlePushToggle}
               disabled={pushLoading}
               className={`w-full py-3 rounded-lg font-medium border-2 ${
@@ -131,10 +132,11 @@ export default function SettingsPage() {
 
         {/* Target Location */}
         <div>
-          <label className="block text-sm font-medium text-slate mb-2">출근 위치 설정</label>
+          <span className="block text-sm font-medium text-slate mb-2">출근 위치 설정</span>
           <p className="text-xs text-steel mb-2">설정된 위치 10m 이내에서만 출근 체크인이 가능합니다.</p>
 
           <button
+            type="button"
             onClick={handleUseCurrentLocation}
             disabled={locationLoading}
             className="w-full py-2 rounded-lg border-2 border-primary bg-card-tint-lavender text-primary font-medium mb-3 disabled:opacity-40"
@@ -161,6 +163,7 @@ export default function SettingsPage() {
                 마커를 드래그하여 위치를 조정할 수 있습니다. 반경 10m.
               </p>
               <button
+                type="button"
                 onClick={handleSaveLocation}
                 className="w-full py-2 rounded-lg bg-success text-on-dark font-medium"
               >
@@ -172,10 +175,11 @@ export default function SettingsPage() {
 
         {/* Reset */}
         <button
+          type="button"
           onClick={() => {
             if (confirm('온보딩을 다시 보시겠습니까?')) {
               localStorage.removeItem('bmark-onboarded');
-              router.push('/');
+              push('/');
             }
           }}
           className="w-full text-sm text-steel py-2"

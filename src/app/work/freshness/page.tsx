@@ -7,7 +7,7 @@ import { addToQueue } from '@/lib/queue';
 import type { FreshnessData } from '@/db/schema';
 
 export default function FreshnessForm() {
-  const router = useRouter();
+  const { back, push } = useRouter();
   const [form, setForm] = useState<FreshnessData>({
     productName: '',
     issue: '',
@@ -27,20 +27,21 @@ export default function FreshnessForm() {
       note: '',
       createdAt: new Date(),
     });
-    router.push('/');
+    push('/');
   };
 
   return (
     <div className="min-h-screen bg-surface p-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.back()} className="text-2xl">←</button>
+        <button type="button" onClick={() => back()} className="text-2xl">←</button>
         <h1 className="text-xl font-semibold text-ink">선도문의</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate mb-1">품명</label>
+          <label htmlFor="product-name-input" className="block text-sm font-medium text-slate mb-1">품명</label>
           <input
+            id="product-name-input"
             type="text"
             required
             value={form.productName}
@@ -51,8 +52,9 @@ export default function FreshnessForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate mb-1">이슈 내용</label>
+          <label htmlFor="issue-input" className="block text-sm font-medium text-slate mb-1">이슈 내용</label>
           <textarea
+            id="issue-input"
             required
             value={form.issue}
             onChange={(e) => setForm({ ...form, issue: e.target.value })}

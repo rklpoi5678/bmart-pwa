@@ -1,23 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function InstallBanner() {
-  const [show, setShow] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-
-  useEffect(() => {
+  const [show, setShow] = useState(() => {
     const standalone = window.matchMedia('(display-mode: standalone)').matches
       || (navigator as unknown as { standalone?: boolean }).standalone;
-    if (standalone) return;
-
-    const ua = navigator.userAgent;
-    const ios = /iPad|iPhone|iPod/.test(ua);
-    setIsIOS(ios);
-
-    const dismissed = localStorage.getItem('bmark-install-dismissed');
-    if (!dismissed) setShow(true);
-  }, []);
+    if (standalone) return false;
+    return !localStorage.getItem('bmark-install-dismissed');
+  });
+  const [isIOS] = useState(() => /iPad|iPhone|iPod/.test(navigator.userAgent));
 
   if (!show) return null;
 
@@ -28,7 +20,7 @@ export default function InstallBanner() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50 shadow-lg">
-      <button onClick={dismiss} className="absolute top-2 right-3 text-gray-400 text-lg">×</button>
+      <button type="button" onClick={dismiss} className="absolute top-2 right-3 text-gray-400 text-lg">×</button>
       <p className="font-bold text-sm mb-2">홈 화면에 추가</p>
       {isIOS ? (
         <div className="text-xs text-gray-600 space-y-1">

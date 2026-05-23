@@ -14,7 +14,7 @@ const SEVERITY_COLORS: Record<Severity, string> = {
 };
 
 export default function InspectorPage() {
-  const router = useRouter();
+  const { back } = useRouter();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
 
@@ -29,18 +29,21 @@ export default function InspectorPage() {
       <div className="sticky top-0 bg-canvas border-b border-hairline z-10">
         <div className="p-4">
           <div className="flex items-center gap-3 mb-3">
-            <button onClick={() => router.back()} className="text-2xl">←</button>
+            <button type="button" onClick={() => back()} className="text-2xl">←</button>
             <h1 className="text-xl font-semibold text-ink">검품기준서</h1>
           </div>
           <input
+            id="inspector-search"
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="품명 또는 검사 항목 검색..."
             className="w-full border border-hairline-strong rounded-lg px-3 py-2.5 text-base bg-canvas text-ink"
+            aria-label="품명 또는 검사 항목 검색"
           />
           <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1">
             <button
+              type="button"
               onClick={() => setCategory(null)}
               className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
                 !category ? 'bg-primary text-on-dark' : 'bg-surface text-slate'
@@ -51,6 +54,7 @@ export default function InspectorPage() {
             {CATEGORY_OPTIONS.map((c) => (
               <button
                 key={c}
+                type="button"
                 onClick={() => setCategory(category === c ? null : c)}
                 className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
                   category === c ? 'bg-primary text-on-dark' : 'bg-surface text-slate'
@@ -88,7 +92,10 @@ function InspectorCard({ item }: { item: InspectionItem }) {
   return (
     <div
       className="bg-canvas rounded-lg border border-hairline p-3 active:bg-surface"
+      role="button"
+      tabIndex={0}
       onClick={() => setExpanded(!expanded)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(!expanded); }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
@@ -98,7 +105,7 @@ function InspectorCard({ item }: { item: InspectionItem }) {
               {SEVERITY_LABEL[item.severity]}
             </span>
           </div>
-          <p className="font-medium text-ink">{item.product} — {item.checkPoint}</p>
+          <p className="font-medium text-ink">{item.product}: {item.checkPoint}</p>
         </div>
         <span className="text-steel text-sm">{expanded ? '▲' : '▼'}</span>
       </div>

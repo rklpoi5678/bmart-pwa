@@ -26,7 +26,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
     };
   };
 
-  const [parts, setParts] = useState(parse(value));
+  const [parts, setParts] = useState(() => parse(value));
   const [manual, setManual] = useState(false);
 
   const update = (key: 'letter' | 'zone' | 'row' | 'rack', val: string) => {
@@ -43,9 +43,10 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
   if (manual) {
     return (
       <div>
-        <label className="block text-sm font-medium text-slate mb-1">랙번호</label>
+        <label htmlFor="rack-number-manual" className="block text-sm font-medium text-slate mb-1">랙번호</label>
         <div className="flex gap-2">
           <input
+            id="rack-number-manual"
             type="text"
             required
             value={value}
@@ -68,7 +69,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="text-sm font-medium text-slate">랙번호</label>
+        <span className="text-sm font-medium text-slate">랙번호</span>
         <button
           type="button"
           onClick={() => setManual(true)}
@@ -117,7 +118,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
           <select
             value={parts.zone}
             onChange={(e) => update('zone', e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg px-2 py-2 text-sm bg-canvas text-ink"
+            className="w-full border border-hairline-strong rounded-lg p-2 text-sm bg-canvas text-ink"
           >
             <option value="">선택</option>
             {ZONE_NUMBERS.map((z) => (
@@ -132,7 +133,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
           <select
             value={parts.row}
             onChange={(e) => update('row', e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg px-2 py-2 text-sm bg-canvas text-ink"
+            className="w-full border border-hairline-strong rounded-lg p-2 text-sm bg-canvas text-ink"
           >
             <option value="">선택</option>
             {ROWS.map((r) => (
@@ -147,7 +148,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
           <select
             value={parts.rack}
             onChange={(e) => update('rack', e.target.value)}
-            className="w-full border border-hairline-strong rounded-lg px-2 py-2 text-sm bg-canvas text-ink"
+            className="w-full border border-hairline-strong rounded-lg p-2 text-sm bg-canvas text-ink"
           >
             <option value="">선택</option>
             {RACKS.map((r) => (

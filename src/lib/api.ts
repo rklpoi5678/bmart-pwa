@@ -10,10 +10,6 @@ export function getMode(): AppMode {
   return (localStorage.getItem(STORAGE_KEY) as AppMode) || 'local';
 }
 
-export function setMode(mode: AppMode): void {
-  localStorage.setItem(STORAGE_KEY, mode);
-}
-
 export async function submitToApi(item: {
   type: string;
   target: string;
