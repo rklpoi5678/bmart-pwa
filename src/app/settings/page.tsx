@@ -19,6 +19,7 @@ import {
   isSubscribed,
   registerSubscription,
 } from '@/lib/push';
+import { ArrowLeft, ChevronRight, Smartphone } from 'lucide-react';
 
 const LocationMap = dynamic(() => import('@/components/LocationMap'), { ssr: false });
 
@@ -115,11 +116,29 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-surface p-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
-        <button type="button" onClick={() => back()} className="text-2xl">←</button>
+        <button type="button" onClick={() => back()} className="p-1 -ml-1 rounded-lg text-ink hover:bg-surface transition-colors" aria-label="뒤로">
+          <ArrowLeft size={22} />
+        </button>
         <h1 className="text-xl font-semibold text-ink">설정</h1>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
+        {/* Onboarding Reset */}
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.removeItem('bmark-onboarded');
+            push('/');
+          }}
+          className="w-full bg-brand-navy rounded-xl p-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform shadow-sm"
+        >
+          <Smartphone size={22} className="text-on-dark" />
+          <div className="text-left">
+            <p className="font-semibold text-sm text-on-dark">온보딩 다시보기</p>
+            <p className="text-xs text-on-dark-muted">앱 사용 안내를 다시 확인합니다</p>
+          </div>
+          <ChevronRight size={18} className="ml-auto text-on-dark-muted" />
+        </button>
         {/* Push Notifications */}
         <div>
           <span className="block text-sm font-medium text-slate mb-2">출퇴근 알림</span>
@@ -232,19 +251,6 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Reset */}
-        <button
-          type="button"
-          onClick={() => {
-            if (confirm('온보딩을 다시 보시겠습니까?')) {
-              localStorage.removeItem('bmark-onboarded');
-              push('/');
-            }
-          }}
-          className="w-full text-sm text-steel py-2"
-        >
-          온보딩 다시 보기
-        </button>
       </div>
     </div>
   );

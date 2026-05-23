@@ -17,6 +17,7 @@ interface OutboxCardProps {
 
 export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const mode = getMode();
 
@@ -47,8 +48,10 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
   };
 
   const handleDelete = async () => {
-    if (!item.id) return;
+    if (!item.id || deleting) return;
+    setDeleting(true);
     await deleteItem(item.id);
+    setDeleting(false);
     onRefresh();
   };
 
@@ -132,7 +135,8 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
           <button
             type="button"
             onClick={handleDelete}
-            className="p-1.5 rounded-lg text-steel hover:text-error hover:bg-card-tint-rose transition-colors"
+            disabled={deleting}
+            className="p-1.5 rounded-lg text-steel hover:text-error hover:bg-card-tint-rose transition-colors disabled:opacity-40"
             aria-label="삭제"
           >
             <Trash2 size={16} />

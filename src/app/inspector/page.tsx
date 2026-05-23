@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchInspectionRules, searchInspectionRules, filterByPart, type InspectionRule } from '@/lib/search';
-import { ArrowLeft, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Search, ChevronDown, ChevronUp, X } from 'lucide-react';
 
 const PART_OPTIONS = [
   { value: null, label: '전체' },
@@ -21,6 +21,7 @@ export default function InspectorPage() {
   const [query, setQuery] = useState('');
   const [part, setPart] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInspectionRules()
@@ -105,7 +106,7 @@ export default function InspectorPage() {
           <>
             <p className="text-xs text-steel mb-3">{results.length}개 항목</p>
             {visible.map((item) => (
-              <InspectorCard key={item.id} item={item} />
+              <InspectorCard key={item.id} item={item} onImageClick={setLightboxImage} />
             ))}
             {hasMore && (
               <button
@@ -119,11 +120,35 @@ export default function InspectorPage() {
           </>
         )}
       </div>
+
+      {/* Image Lightbox */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div className="relative max-w-full max-h-full">
+            <img
+              src={lightboxImage}
+              alt="기준 이미지"
+              className="max-w-full max-h-[85dvh] object-contain rounded-xl"
+            />
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              className="absolute -top-3 -right-3 size-8 bg-canvas rounded-full flex items-center justify-center shadow"
+              aria-label="닫기"
+            >
+              <X size={18} className="text-ink" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-const InspectorCard = memo(function InspectorCard({ item }: { item: InspectionRule }) {
+const InspectorCard = memo(function InspectorCard({ item, onImageClick }: { item: InspectionRule; onImageClick?: (url: string) => void }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -163,8 +188,9 @@ const InspectorCard = memo(function InspectorCard({ item }: { item: InspectionRu
               <img
                 src={encodeURI(item.imageUrl)}
                 alt={`${item.name} 기준 이미지`}
-                className="w-full max-h-52 object-contain rounded-xl border border-hairline mb-3 bg-surface"
+                className="w-full max-h-52 object-contain rounded-xl border border-hairline mb-3 bg-surface cursor-zoom-in"
                 loading="lazy"
+                onClick={(e) => { e.stopPropagation(); onImageClick?.(item.imageUrl!); }}
               />
             )}
             <p className="text-sm text-charcoal leading-relaxed whitespace-pre-wrap">{item.defects}</p>

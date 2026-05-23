@@ -239,12 +239,12 @@ export default function AccountsPage() {
             <h2 className="font-semibold text-ink">내 QR 코드</h2>
             <span className="text-sm text-slate ml-auto">{qrData.username}</span>
           </div>
-          <div className="flex gap-4 justify-center">
-            <div className="bg-surface rounded-xl p-4 text-center">
+          <div className="flex flex-col gap-4 items-center">
+            <div className="bg-surface rounded-xl p-4 text-center w-full max-w-[180px]">
               <Image src={qrData.qrId} alt="ID QR" width={140} height={140} className="mx-auto" />
               <p className="text-xs text-steel mt-2 font-medium">아이디</p>
             </div>
-            <div className="bg-surface rounded-xl p-4 text-center">
+            <div className="bg-surface rounded-xl p-4 text-center w-full max-w-[180px]">
               <Image src={qrData.qrPw} alt="PW QR" width={140} height={140} className="mx-auto" />
               <p className="text-xs text-steel mt-2 font-medium">비밀번호</p>
             </div>

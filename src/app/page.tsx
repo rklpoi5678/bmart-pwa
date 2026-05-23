@@ -39,6 +39,7 @@ export default function HomePage() {
   const [summary, setSummary] = useState<Summary>({ pending: 0, sent: 0, failed: 0 });
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [showOnboarding, setShowOnboarding] = useState(() => typeof window !== 'undefined' ? !localStorage.getItem('bmark-onboarded') : false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
   const installPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -64,14 +65,17 @@ export default function HomePage() {
 
   const refresh = () => getQueueSummary().then(setSummary);
 
-  const handleInstall = async () => {
-    if (!installPromptRef.current) {
-      setShowOnboarding(true);
-      return;
+  const handleInstall = () => {
+    setShowInstallModal(true);
+  };
+
+  const confirmInstall = async () => {
+    setShowInstallModal(false);
+    if (installPromptRef.current) {
+      await installPromptRef.current.prompt();
+      const result = await installPromptRef.current.userChoice;
+      if (result.outcome === 'accepted') installPromptRef.current = null;
     }
-    await installPromptRef.current.prompt();
-    const result = await installPromptRef.current.userChoice;
-    if (result.outcome === 'accepted') installPromptRef.current = null;
   };
 
   const hasPending = summary.pending > 0;
@@ -205,6 +209,38 @@ export default function HomePage() {
       >
         탭하여 새로고침
       </button>
+
+      {/* Install Confirmation Modal */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-canvas w-full max-w-sm rounded-2xl p-6">
+            <div className="text-center mb-6">
+              <Smartphone size={40} className="mx-auto mb-3 text-primary" />
+              <h2 className="text-lg font-semibold text-ink mb-2">홈 화면에 추가</h2>
+              <p className="text-sm text-slate leading-relaxed">
+                홈 화면에 추가하시겠습니까?<br />
+                오프라인 사용과 푸시 알림이 가능해집니다.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowInstallModal(false)}
+                className="flex-1 py-3 rounded-lg border border-hairline-strong text-charcoal font-medium"
+              >
+                아니요
+              </button>
+              <button
+                type="button"
+                onClick={confirmInstall}
+                className="flex-1 py-3 rounded-lg bg-primary text-on-dark font-medium"
+              >
+                예
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
     </div>
