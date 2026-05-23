@@ -119,6 +119,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
             value={parts.zone}
             onChange={(e) => update('zone', e.target.value)}
             className="w-full border border-hairline-strong rounded-lg p-2 text-sm bg-canvas text-ink"
+            aria-label="구역"
           >
             <option value="">선택</option>
             {ZONE_NUMBERS.map((z) => (
@@ -134,6 +135,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
             value={parts.row}
             onChange={(e) => update('row', e.target.value)}
             className="w-full border border-hairline-strong rounded-lg p-2 text-sm bg-canvas text-ink"
+            aria-label="열"
           >
             <option value="">선택</option>
             {ROWS.map((r) => (
@@ -149,6 +151,7 @@ export default function RackNumberInput({ value, onChange }: RackNumberInputProp
             value={parts.rack}
             onChange={(e) => update('rack', e.target.value)}
             className="w-full border border-hairline-strong rounded-lg p-2 text-sm bg-canvas text-ink"
+            aria-label="랙"
           >
             <option value="">선택</option>
             {RACKS.map((r) => (

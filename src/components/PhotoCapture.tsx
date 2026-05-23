@@ -77,6 +77,7 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
         multiple
         onChange={handleFiles}
         className="hidden"
+        aria-label="사진 파일 선택"
       />
     </div>
   );

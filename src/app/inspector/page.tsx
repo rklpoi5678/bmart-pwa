@@ -90,12 +90,10 @@ function InspectorCard({ item }: { item: InspectionItem }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div
-      className="bg-canvas rounded-lg border border-hairline p-3 active:bg-surface"
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
+      className="bg-canvas rounded-lg border border-hairline p-3 active:bg-surface w-full text-left"
       onClick={() => setExpanded(!expanded)}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(!expanded); }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
@@ -114,6 +112,6 @@ function InspectorCard({ item }: { item: InspectionItem }) {
           <p className="text-sm text-charcoal">{item.standard}</p>
         </div>
       )}
-    </div>
+    </button>
   );
 }

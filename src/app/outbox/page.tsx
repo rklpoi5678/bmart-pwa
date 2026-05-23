@@ -20,20 +20,19 @@ export default function OutboxPage() {
   const [tab, setTab] = useState<QueueItemStatus | 'all'>('all');
   const [copied, setCopied] = useState(false);
 
-  const load = async () => {
-    const status = tab === 'all' ? undefined : tab;
-    setItems(await getQueueItems(status));
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [tab]);
+  useEffect(() => {
+    (async () => {
+      const status = tab === 'all' ? undefined : tab;
+      setItems(await getQueueItems(status));
+    })();
+  }, [tab]);
 
   const handleShareAll = async () => {
     const allPending = await getQueueItems('pending');
     const ok = await shareAllItems(allPending);
     if (ok) {
       setCopied(true);
-      setTimeout(() => { setCopied(false); load(); }, 1500);
+      setTimeout(() => { setCopied(false); setTab('all'); }, 1500);
     }
   };
 
@@ -64,7 +63,7 @@ export default function OutboxPage() {
         {items.length === 0 ? (
           <p className="text-center text-steel py-12">항목이 없습니다</p>
         ) : (
-          items.map((item) => <OutboxCard key={item.id} item={item} onRefresh={load} />)
+          items.map((item) => <OutboxCard key={item.id} item={item} onRefresh={() => setTab('all')} />)
         )}
       </div>
 

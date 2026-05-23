@@ -7,6 +7,7 @@ import { shareItem } from '@/lib/share';
 import { deleteItem, updateItemStatus } from '@/lib/queue';
 import { getMode, submitToApi } from '@/lib/api';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface OutboxCardProps {
   item: QueueItem;
@@ -68,7 +69,7 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
       {item.photos.length > 0 && (
         <div className="flex gap-1">
           {item.photos.slice(0, 3).map((p, i) => (
-            <img key={i} src={p} alt="" className="size-12 rounded-lg object-cover" />
+            <Image key={i} src={p} alt="" width={48} height={48} className="size-12 rounded-lg object-cover" />
           ))}
           {item.photos.length > 3 && (
             <span className="size-12 rounded-lg bg-surface flex items-center justify-center text-xs text-steel">

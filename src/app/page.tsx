@@ -25,13 +25,11 @@ export default function HomePage() {
   const { push } = useRouter();
   const [summary, setSummary] = useState<Summary>({ pending: 0, sent: 0, failed: 0 });
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => typeof window !== 'undefined' ? !localStorage.getItem('bmark-onboarded') : false);
   const installPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     getQueueSummary().then(setSummary);
-    setIsOnline(navigator.onLine);
-    setShowOnboarding(!localStorage.getItem('bmark-onboarded'));
 
     const onOnline = () => setIsOnline(true);
     const onOffline = () => setIsOnline(false);

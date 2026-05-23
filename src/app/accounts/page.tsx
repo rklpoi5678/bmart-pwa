@@ -155,8 +155,9 @@ export default function AccountsPage() {
           </div>
 
           {authMode === 'login' && (
-            <label className="flex items-center gap-2 text-sm text-slate cursor-pointer">
+            <label htmlFor="remember-me" className="flex items-center gap-2 text-sm text-slate cursor-pointer">
               <input
+                id="remember-me"
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
@@ -189,7 +190,7 @@ export default function AccountsPage() {
   return (
     <div className="min-h-screen bg-surface p-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => back()} className="text-2xl">←</button>
+        <button type="button" onClick={() => back()} className="text-2xl">←</button>
         <h1 className="text-xl font-semibold text-ink">계정</h1>
         <div className="flex-1" />
         <span className="text-sm text-slate">{currentUser}</span>

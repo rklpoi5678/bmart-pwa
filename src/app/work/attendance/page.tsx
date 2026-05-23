@@ -56,6 +56,7 @@ export default function AttendanceForm() {
   useEffect(() => {
     if (!targetLocation) {
       setLocationLoading(false);
+      setInRange(false);
       return;
     }
     (async () => {
