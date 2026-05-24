@@ -12,10 +12,10 @@
     "ios": "npm run build:cap && npx cap open ios"
   },
   "dependencies": {
-    "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor/android": "^8.3.4",
     "@capacitor/app-launcher": "^8.0.1",
     "@capacitor/core": "^8.3.4",
+    "@capacitor/geolocation": "^8.2.0",
     "@capacitor/ios": "^8.3.4",
     "@capacitor/local-notifications": "^8.2.0",
     "@serwist/next": "^9.5.11",

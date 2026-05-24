@@ -1,7 +1,7 @@
 import {
   isNative,
   showLocalNotification,
-  BackgroundGeolocation,
+  Geolocation,
 } from "./native";
 import { getDistance, type LatLng } from "./location";
 
@@ -15,7 +15,7 @@ export interface GeofenceConfig {
   checkOutHour: number;
 }
 
-let watcherId: string | null = null;
+let watchId: string | null = null;
 let lastNotified = 0;
 
 export function saveGeofenceConfig(config: GeofenceConfig): void {
@@ -34,23 +34,19 @@ export function loadGeofenceConfig(): GeofenceConfig | null {
   }
 }
 
-export async function startGeofence(
-  config: GeofenceConfig,
-): Promise<string | null> {
-  if (!isNative) return null;
+export async function startGeofence(config: GeofenceConfig): Promise<void> {
+  if (!isNative) return;
 
   saveGeofenceConfig(config);
 
-  watcherId = await BackgroundGeolocation.addWatcher(
+  watchId = await Geolocation.watchPosition(
     {
-      backgroundMessage: "출퇴근 위치 감지 중",
-      backgroundTitle: "B-Mart",
-      requestPermissions: true,
-      stale: false,
-      distanceFilter: 10,
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 60000,
     },
-    (position, error) => {
-      if (error || !position) return;
+    (position, err) => {
+      if (err || !position) return;
 
       const now = new Date();
       const hour = now.getHours();
@@ -63,7 +59,10 @@ export async function startGeofence(
 
       if (nowMs - lastNotified < DEBOUNCE_MS) return;
 
-      const user: LatLng = { lat: position.latitude, lng: position.longitude };
+      const user: LatLng = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
       const dist = getDistance(user, config.target);
 
       if (dist <= config.radius) {
@@ -76,12 +75,10 @@ export async function startGeofence(
       }
     },
   );
-
-  return watcherId;
 }
 
 export async function stopGeofence(): Promise<void> {
-  if (!watcherId) return;
-  await BackgroundGeolocation.removeWatcher({ id: watcherId });
-  watcherId = null;
+  if (!watchId) return;
+  await Geolocation.clearWatch({ id: watchId });
+  watchId = null;
 }
