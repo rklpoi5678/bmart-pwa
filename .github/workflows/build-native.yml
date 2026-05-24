@@ -27,6 +27,7 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      - run: npx cap add android
       - run: npx cap sync android
 
       - run: |
@@ -61,6 +62,7 @@ jobs:
 
       - run: npm ci
       - run: npm run build -- --webpack
+      - run: npx cap add ios
       - run: npx cap sync ios
 
       - run: |
