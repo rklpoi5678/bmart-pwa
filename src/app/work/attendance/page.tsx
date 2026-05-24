@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { isLoggedIn } from '@/lib/auth';
 import { fetchTargetLocation } from '@/lib/api';
+import { isNative, launchShiftee as nativeLaunchShiftee } from '@/lib/native';
 import {
   getStoredLocation,
   getCurrentPosition,
@@ -96,7 +97,11 @@ export default function AttendanceForm() {
   const canCheckOut = now.getHours() >= CHECKOUT_HOUR;
 
   const launchShiftee = () => {
-    window.location.href = 'sifty://';
+    if (isNative) {
+      nativeLaunchShiftee();
+    } else {
+      window.location.href = 'sifty://';
+    }
   };
 
   const handleSubmit = async (action: 'check-in' | 'check-out') => {
@@ -135,6 +140,17 @@ export default function AttendanceForm() {
       {!isOnline && (
         <div className="bg-card-tint-yellow border border-hairline rounded-lg px-3 py-2 mb-4">
           <p className="text-sm text-charcoal">오프라인 모드 — 아웃박스 저장만 가능</p>
+        </div>
+      )}
+
+      {!isNative && (
+        <div className="bg-card-tint-yellow border border-hairline rounded-lg px-3 py-2 mb-4">
+          <p className="text-sm text-charcoal font-medium">
+            위치 기반 자동 출퇴근은 네이티브 앱에서만 가능합니다.
+          </p>
+          <p className="text-xs text-steel mt-1">
+            APK/IPA를 설치하면 근처 도착 시 자동으로 Shiftee를 실행할 수 있습니다.
+          </p>
         </div>
       )}
 

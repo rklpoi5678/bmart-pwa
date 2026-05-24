@@ -53,3 +53,7 @@ next-env.d.ts
 worker/node_modules/
 worker/package-lock.json
 worker/.wrangler/
+
+# Capacitor native platforms
+android/
+ios/

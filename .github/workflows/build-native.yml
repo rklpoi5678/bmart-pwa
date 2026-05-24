@@ -1,0 +1,102 @@
+name: Build Native Apps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bmark-pwa/**'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bmark-pwa
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bmark-pwa/package-lock.json
+
+      - run: npm ci
+      - run: npm run build -- --webpack
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - run: npx cap sync android
+
+      - run: |
+          cd android
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          ./gradlew assembleDebug
+
+      - name: Get version
+        id: ver
+        run: echo "v=v$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+
+      - name: Release APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.v }}-android
+          files: bmark-pwa/android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-ios:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: bmark-pwa
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bmark-pwa/package-lock.json
+
+      - run: npm ci
+      - run: npm run build -- --webpack
+      - run: npx cap sync ios
+
+      - run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphoneos \
+            -archivePath build/App.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO
+
+      - run: |
+          cd ios/App
+          mkdir -p build/ipa
+          cp -r build/App.xcarchive/Products/Applications/*.app build/ipa/
+          cd build/ipa
+          mkdir Payload
+          mv *.app Payload/
+          zip -r B-Mark.ipa Payload
+
+      - name: Get version
+        id: ver
+        run: echo "v=v$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+
+      - name: Release IPA
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.v }}-ios
+          files: bmark-pwa/ios/App/build/ipa/B-Mark.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
