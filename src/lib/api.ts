@@ -10,6 +10,21 @@ export function getMode(): AppMode {
   return (localStorage.getItem(STORAGE_KEY) as AppMode) || 'local';
 }
 
+// 5초 timeout 유틸 — LTE 신호 약할 때 네트워크 프리징 방지
+export async function fetchWithTimeout(
+  url: string,
+  options?: RequestInit,
+  timeoutMs = 5000,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function submitToApi(item: {
   type: string;
   target: string;
@@ -28,7 +43,7 @@ export async function submitToApi(item: {
   };
 
   try {
-    const res = await fetch(`${WORKER_URL}${endpoint}`, {
+    const res = await fetchWithTimeout(`${WORKER_URL}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -36,6 +51,9 @@ export async function submitToApi(item: {
     const json = await res.json();
     return json.ok ? { ok: true } : { ok: false, error: '전송 실패' };
   } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return { ok: false, error: '네트워크 연결이 불안정합니다. 나중에 다시 시도해주세요.' };
+    }
     return { ok: false, error: String(err) };
   }
 }
@@ -47,86 +65,125 @@ export async function loginAccount(
   password: string,
   rememberMe: boolean,
 ): Promise<{ ok: boolean; username?: string; error?: string }> {
-  const res = await fetch(`${WORKER_URL}/api/account/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password, rememberMe }),
-  });
-  const data = await res.json();
-  if (data.ok && data.token) {
-    setToken(data.token);
-    return { ok: true, username: data.username };
+  try {
+    const res = await fetchWithTimeout(`${WORKER_URL}/api/account/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, rememberMe }),
+    });
+    const data = await res.json();
+    if (data.ok && data.token) {
+      setToken(data.token);
+      return { ok: true, username: data.username };
+    }
+    return { ok: false, error: data.error || '로그인 실패' };
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return { ok: false, error: '네트워크 연결이 불안정합니다.' };
+    }
+    return { ok: false, error: String(err) };
   }
-  return { ok: false, error: data.error || '로그인 실패' };
 }
 
 export async function logoutAccount(): Promise<void> {
-  await fetch(`${WORKER_URL}/api/account/logout`, {
-    method: 'POST',
-    headers: authHeaders(),
-  });
-  clearToken();
+  try {
+    await fetchWithTimeout(`${WORKER_URL}/api/account/logout`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+  } catch {
+    // logout은 비동기后台 — 에러 무시
+  } finally {
+    clearToken();
+  }
 }
 
 export async function registerAccount(
   username: string,
   password: string,
 ): Promise<{ ok: boolean; username?: string; token?: string; error?: string }> {
-  const res = await fetch(`${WORKER_URL}/api/account/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
-  });
-  const data = await res.json();
-  if (data.ok && data.token) {
-    setToken(data.token);
-    return { ok: true, username: data.username, token: data.token };
+  try {
+    const res = await fetchWithTimeout(`${WORKER_URL}/api/account/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (data.ok && data.token) {
+      setToken(data.token);
+      return { ok: true, username: data.username, token: data.token };
+    }
+    return { ok: false, error: data.error || '등록 실패' };
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return { ok: false, error: '네트워크 연결이 불안정합니다.' };
+    }
+    return { ok: false, error: String(err) };
   }
-  return { ok: false, error: data.error || '등록 실패' };
 }
 
 export async function fetchCurrentUser(): Promise<{ username: string } | null> {
-  const res = await fetch(`${WORKER_URL}/api/account/me`, {
-    headers: authHeaders(),
-  });
-  const data = await res.json();
-  return data.ok ? { username: data.username } : null;
+  try {
+    const res = await fetchWithTimeout(`${WORKER_URL}/api/account/me`, {
+      headers: authHeaders(),
+    });
+    const data = await res.json();
+    return data.ok ? { username: data.username } : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchAccounts(): Promise<{ id: number; username: string; created_at: string }[]> {
-  const res = await fetch(`${WORKER_URL}/api/account/list`, {
-    headers: authHeaders(),
-  });
-  const data = await res.json();
-  return data.ok ? data.accounts : [];
+  try {
+    const res = await fetchWithTimeout(`${WORKER_URL}/api/account/list`, {
+      headers: authHeaders(),
+    });
+    const data = await res.json();
+    return data.ok ? data.accounts : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function deleteAccount(username: string): Promise<boolean> {
-  const res = await fetch(`${WORKER_URL}/api/account/delete`, {
-    method: 'POST',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username }),
-  });
-  const data = await res.json();
-  return data.ok;
+  try {
+    const res = await fetchWithTimeout(`${WORKER_URL}/api/account/delete`, {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+    const data = await res.json();
+    return data.ok;
+  } catch {
+    return false;
+  }
 }
 
 // === Location API ===
 
 export async function fetchTargetLocation(): Promise<TargetLocation | null> {
-  const res = await fetch(`${WORKER_URL}/api/location`, {
-    headers: authHeaders(),
-  });
-  const data = await res.json();
-  return data.ok ? data.location : null;
+  try {
+    const res = await fetchWithTimeout(`${WORKER_URL}/api/location`, {
+      headers: authHeaders(),
+    });
+    const data = await res.json();
+    return data.ok ? data.location : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function saveTargetLocation(loc: TargetLocation): Promise<boolean> {
-  const res = await fetch(`${WORKER_URL}/api/location`, {
-    method: 'PUT',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify(loc),
-  });
-  const data = await res.json();
-  return data.ok;
+  try {
+    const res = await fetchWithTimeout(`${WORKER_URL}/api/location`, {
+      method: 'PUT',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(loc),
+    });
+    const data = await res.json();
+    return data.ok;
+  } catch {
+    return false;
+  }
 }

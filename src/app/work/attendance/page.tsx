@@ -29,9 +29,22 @@ export default function AttendanceForm() {
   const [locationLoading, setLocationLoading] = useState(true);
   const [inRange, setInRange] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
+  const [locationConfirmed, setLocationConfirmed] = useState(false);
 
   const [workerName, setWorkerName] = useState('');
   const [saved, setSaved] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
 
   useEffect(() => {
     const tick = setInterval(() => setNow(new Date()), 1000);
@@ -69,9 +82,11 @@ export default function AttendanceForm() {
         const dist = getDistance(user, targetLocation);
         setDistance(dist);
         setInRange(dist <= 10);
+        setLocationConfirmed(true);
       } catch (err) {
         setLocationError(String(err));
         setInRange(false);
+        setLocationConfirmed(false); // GPS 실패 — 범위 확인 불가
       } finally {
         setLocationLoading(false);
       }
@@ -116,6 +131,12 @@ export default function AttendanceForm() {
         <button type="button" onClick={() => back()} className="text-2xl">←</button>
         <h1 className="text-xl font-semibold text-ink">출퇴근</h1>
       </div>
+
+      {!isOnline && (
+        <div className="bg-card-tint-yellow border border-hairline rounded-lg px-3 py-2 mb-4">
+          <p className="text-sm text-charcoal">오프라인 모드 — 아웃박스 저장만 가능</p>
+        </div>
+      )}
 
       <div className="text-center mb-6">
         <p className="text-4xl font-bold font-mono text-ink">{timeStr}</p>
@@ -169,13 +190,13 @@ export default function AttendanceForm() {
           )}
 
           {locationError && (
-            <div className="bg-card-tint-rose border border-error rounded-lg p-3 mb-2">
-              <p className="text-sm text-error">{locationError}</p>
-              <p className="text-xs text-steel mt-1">위치 권한을 허용해주세요.</p>
+            <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3 mb-2">
+              <p className="text-sm text-charcoal">GPS 오류: {locationError}</p>
+              <p className="text-xs text-steel mt-1">위치 없이 출근 기록만 저장할 수 있습니다.</p>
             </div>
           )}
 
-          {userLocation && targetLocation && (
+          {userLocation && targetLocation && locationConfirmed && (
             <>
               <LocationMap
                 center={userLocation}
@@ -196,10 +217,11 @@ export default function AttendanceForm() {
             </>
           )}
 
-          {!targetLocation && !locationLoading && (
-            <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3">
-              <p className="text-sm text-charcoal">목표 위치가 설정되지 않았습니다.</p>
-              <p className="text-xs text-steel mt-1">설정 페이지에서 출근 위치를 설정해주세요.</p>
+          {/* GPS 미가져옴 또는 targetLocation 없음 — 범위 확인 불가 */}
+          {(locationError || (!userLocation && !targetLocation && !locationLoading)) && (
+            <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3 mb-2">
+              <p className="text-sm text-charcoal">범위 확인 불가</p>
+              <p className="text-xs text-steel mt-1">위치 없이 출근 기록만 저장할 수 있습니다.</p>
             </div>
           )}
         </div>
@@ -207,13 +229,13 @@ export default function AttendanceForm() {
         <button
           type="button"
           onClick={() => handleSubmit('check-in')}
-          disabled={submitting || !saved || !inRange}
+          disabled={submitting || !saved || (locationConfirmed && !inRange)}
           className="w-full py-4 rounded-xl font-bold text-lg bg-success text-on-dark disabled:opacity-40 active:scale-[0.98] transition-transform"
         >
           출근하기
         </button>
 
-        {inRange && (
+        {(inRange || !locationConfirmed) && (
           <button
             type="button"
             onClick={launchShiftee}
