@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: zulu
-          java-version: 17
+          java-version: 21
 
       - uses: android-actions/setup-android@v3
 
@@ -64,6 +64,9 @@ jobs:
       - run: npm run build -- --webpack
       - run: npx cap add ios
       - run: npx cap sync ios
+
+      - name: List ios directory
+        run: find ios -maxdepth 3 -name "*.xcworkspace" -o -name "*.xcodeproj" | head -20
 
       - run: |
           cd ios/App
