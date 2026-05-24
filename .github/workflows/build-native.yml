@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
@@ -65,21 +68,28 @@ jobs:
       - run: npx cap add ios
       - run: npx cap sync ios
 
-      - name: List ios directory
-        run: find ios -maxdepth 3 -name "*.xcworkspace" -o -name "*.xcodeproj" | head -20
+      - name: Debug ios structure
+        run: find ios -maxdepth 4 \( -name "*.xcworkspace" -o -name "*.xcodeproj" -o -name "*.plist" \) 2>/dev/null || echo "ios directory not found"
 
-      - run: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace \
-            -scheme App \
+      - name: Build IPA
+        run: |
+          WORKSPACE=$(find ios -maxdepth 3 -name "*.xcworkspace" | head -1)
+          if [ -z "$WORKSPACE" ]; then
+            echo "No .xcworkspace found"
+            exit 1
+          fi
+          WORKSPACE_DIR=$(dirname "$WORKSPACE")
+          WORKSPACE_NAME=$(basename "$WORKSPACE")
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          cd "$WORKSPACE_DIR"
+          xcodebuild -workspace "$WORKSPACE_NAME" \
+            -scheme "$SCHEME" \
             -configuration Debug \
             -sdk iphoneos \
             -archivePath build/App.xcarchive \
             archive \
             CODE_SIGNING_ALLOWED=NO
 
-      - run: |
-          cd ios/App
           mkdir -p build/ipa
           cp -r build/App.xcarchive/Products/Applications/*.app build/ipa/
           cd build/ipa
