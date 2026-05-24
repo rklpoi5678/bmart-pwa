@@ -80,7 +80,14 @@ jobs:
           fi
           WORKSPACE_DIR=$(dirname "$WORKSPACE")
           WORKSPACE_NAME=$(basename "$WORKSPACE")
-          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+
+          # Auto-detect scheme from workspace
+          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list 2>/dev/null | grep -A1 "Schemes:" | tail -1 | xargs)
+          if [ -z "$SCHEME" ]; then
+            SCHEME="App"
+          fi
+          echo "Building: workspace=$WORKSPACE_NAME scheme=$SCHEME"
+
           cd "$WORKSPACE_DIR"
           xcodebuild -workspace "$WORKSPACE_NAME" \
             -scheme "$SCHEME" \
