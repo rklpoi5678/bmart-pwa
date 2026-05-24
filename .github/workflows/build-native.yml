@@ -7,9 +7,6 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: bmark-pwa
 
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +15,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: bmark-pwa/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
       - run: npm run build -- --webpack
@@ -46,15 +43,12 @@ jobs:
         with:
           tag_name: ${{ steps.ver.outputs.v }}-android
           draft: true
-          files: bmark-pwa/android/app/build/outputs/apk/debug/app-debug.apk
+          files: android/app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-ios:
     runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: bmark-pwa
 
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +57,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: bmark-pwa/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
       - run: npm run build -- --webpack
@@ -97,6 +91,6 @@ jobs:
         with:
           tag_name: ${{ steps.ver.outputs.v }}-ios
           draft: true
-          files: bmark-pwa/ios/App/build/ipa/B-Mark.ipa
+          files: ios/App/build/ipa/B-Mark.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
