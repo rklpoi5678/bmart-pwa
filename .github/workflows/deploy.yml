@@ -16,6 +16,10 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - name: Inject env vars
+        run: |
+          echo "NEXT_PUBLIC_KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}" >> .env.local
+          echo "NEXT_PUBLIC_WORKER_URL=${{ secrets.WORKER_URL }}" >> .env.local
       - run: npm run build -- --webpack
 
       - uses: cloudflare/wrangler-action@v3

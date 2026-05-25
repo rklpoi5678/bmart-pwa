@@ -232,7 +232,7 @@ export default function SettingsPage() {
             <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3 mb-3">
               <p className="text-sm text-charcoal font-medium">Kakao API 키가 설정되지 않음</p>
               <p className="text-xs text-steel mt-1">
-                <code className="bg-surface px-1 rounded">.env.local</code>에 <code className="bg-surface px-1 rounded">NEXT_PUBLIC_KAKAO_REST_API_KEY</code>를 추가하고 재빌드 필요
+                <code className="bg-surface px-1 rounded">NEXT_PUBLIC_KAKAO_REST_API_KEY</code>를 Vercel 프로젝트 설정 &gt; Environment Variables에 추가 필요
               </p>
             </div>
           )}
