@@ -22,7 +22,7 @@ export default function AttendancePage() {
   const [config, setConfig] = useState<GeofenceConfig | null>(null);
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
   const [locationError, setLocationError] = useState('');
-  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationLoading, setLocationLoading] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
   const [inRange, setInRange] = useState(false);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
@@ -37,31 +37,26 @@ export default function AttendancePage() {
     setConfig(saved);
   }, []);
 
-  useEffect(() => {
-    if (!config) {
+  const handleCheckLocation = async () => {
+    if (!config) return;
+    setLocationLoading(true);
+    setLocationError('');
+    try {
+      const pos = await getCurrentPosition();
+      const user: LatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setUserLocation(user);
+      const dist = getDistance(user, config.target);
+      setDistance(dist);
+      setInRange(dist <= config.radius);
+      setLocationConfirmed(true);
+    } catch (err) {
+      setLocationError(String(err));
+      setInRange(false);
+      setLocationConfirmed(false);
+    } finally {
       setLocationLoading(false);
-      return;
     }
-    (async () => {
-      setLocationLoading(true);
-      setLocationError('');
-      try {
-        const pos = await getCurrentPosition();
-        const user: LatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLocation(user);
-        const dist = getDistance(user, config.target);
-        setDistance(dist);
-        setInRange(dist <= config.radius);
-        setLocationConfirmed(true);
-      } catch (err) {
-        setLocationError(String(err));
-        setInRange(false);
-        setLocationConfirmed(false);
-      } finally {
-        setLocationLoading(false);
-      }
-    })();
-  }, [config]);
+  };
 
   // Safety timeout: release loading state if geolocation hangs
   useEffect(() => {
@@ -176,31 +171,6 @@ export default function AttendancePage() {
               )}
             </div>
 
-            {locationError && (
-              <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3 mb-2">
-                <p className="text-sm text-charcoal">GPS: {locationError}</p>
-                <p className="text-xs text-steel mt-1">근무지 위치만 표시됩니다.</p>
-              </div>
-            )}
-
-            {locationLoading && !locationError && (
-              <p className="text-xs text-steel mb-2">현재 위치 확인 중...</p>
-            )}
-
-            {!locationLoading && locationError && !locationConfirmed && (
-              <button
-                type="button"
-                onClick={() => {
-                  setLocationLoading(true);
-                  setLocationError('');
-                  setTimeout(() => { window.location.reload(); }, 100);
-                }}
-                className="w-full py-2 rounded-lg border border-primary text-primary text-sm font-medium bg-card-tint-lavender active:scale-[0.98] transition-transform mt-2"
-              >
-                위치 다시 확인
-              </button>
-            )}
-
             <LocationMap
               center={userLocation || config.target}
               markerPosition={config.target}
@@ -212,9 +182,35 @@ export default function AttendancePage() {
             />
 
             {distance != null && (
-              <p className="text-xs text-steel text-center">
+              <p className="text-xs text-steel text-center mb-2">
                 근무지까지 {Math.round(distance)}m
               </p>
+            )}
+
+            {locationError && (
+              <p className="text-xs text-error text-center mb-2">{locationError}</p>
+            )}
+
+            {locationLoading ? (
+              <div className="w-full py-3 rounded-xl bg-primary/10 text-primary font-medium text-sm text-center">
+                위치 확인 중...
+              </div>
+            ) : !locationConfirmed ? (
+              <button
+                type="button"
+                onClick={handleCheckLocation}
+                className="w-full py-3 rounded-xl bg-primary text-white font-semibold text-sm active:scale-[0.98] transition-transform"
+              >
+                현재 내 위치 확인
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCheckLocation}
+                className="w-full py-2 rounded-lg border border-primary text-primary text-sm font-medium bg-card-tint-lavender active:scale-[0.98] transition-transform"
+              >
+                위치 다시 확인
+              </button>
             )}
           </div>
 
