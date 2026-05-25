@@ -48,7 +48,33 @@ export function isWithinRadius(user: LatLng, target: LatLng): boolean {
   return getDistance(user, target) <= CHECK_RADIUS_M;
 }
 
-export function getCurrentPosition(): Promise<GeolocationPosition> {
+export async function getCurrentPosition(): Promise<GeolocationPosition> {
+  // Capacitor native: use plugin directly (navigator.geolocation may not work in WebView)
+  try {
+    const { Capacitor } = await import('@capacitor/core');
+    if (Capacitor.isNativePlatform()) {
+      const { Geolocation } = await import('@capacitor/geolocation');
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 10000,
+      });
+      return {
+        coords: {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy ?? 0,
+          altitude: pos.coords.altitude ?? null,
+          altitudeAccuracy: pos.coords.altitudeAccuracy ?? null,
+          heading: pos.coords.heading ?? null,
+          speed: pos.coords.speed ?? null,
+        },
+        timestamp: pos.timestamp,
+      } as GeolocationPosition;
+    }
+  } catch {
+    // Not Capacitor — fall through to browser API
+  }
+
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('이 기기는 위치 정보를 지원하지 않습니다.'));
