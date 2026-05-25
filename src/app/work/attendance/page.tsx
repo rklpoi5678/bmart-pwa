@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { isNative, launchShiftee as nativeLaunchShiftee } from '@/lib/native';
+import { isNative, launchShiftee as nativeLaunchShiftee, showLocalNotification } from '@/lib/native';
 import {
   getCurrentPosition,
   getDistance,
@@ -57,6 +57,20 @@ export default function AttendancePage() {
       setLocationLoading(false);
     }
   };
+
+  const hasAutoLaunched = useRef(false);
+
+  useEffect(() => {
+    if (!locationConfirmed || !inRange || !config || hasAutoLaunched.current) return;
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const checkInMin = config.checkInHour * 60 + config.checkInMinute;
+    if (nowMin < checkInMin - 60 || nowMin > checkInMin + 60) return;
+    hasAutoLaunched.current = true;
+    if (isNative) {
+      showLocalNotification('출근 알림', '근무지에 도착했습니다. Shiftee를 실행합니다.');
+    }
+    setTimeout(() => { nativeLaunchShiftee(); }, 1500);
+  }, [locationConfirmed, inRange, config, now]);
 
   // Safety timeout: release loading state if geolocation hangs
   useEffect(() => {
