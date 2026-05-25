@@ -228,6 +228,14 @@ export default function SettingsPage() {
           <p className="text-xs text-steel mb-3">주소를 검색하여 근무지를 설정하세요. 반경 30m 이내 도착 시 자동 인식됩니다.</p>
 
           {/* Address Search */}
+          {!process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY && (
+            <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3 mb-3">
+              <p className="text-sm text-charcoal font-medium">Kakao API 키가 설정되지 않음</p>
+              <p className="text-xs text-steel mt-1">
+                <code className="bg-surface px-1 rounded">.env.local</code>에 <code className="bg-surface px-1 rounded">NEXT_PUBLIC_KAKAO_REST_API_KEY</code>를 추가하고 재빌드 필요
+              </p>
+            </div>
+          )}
           <div className="relative mb-3">
             <div className="flex gap-2">
               <div className="flex-1 relative">
@@ -293,24 +301,24 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
+            <div className="min-w-0">
               <label htmlFor="check-in" className="block text-xs text-steel mb-1">출근 시간</label>
               <input
                 id="check-in"
                 type="time"
                 value={checkInTime}
                 onChange={(e) => setCheckInTime(e.target.value)}
-                className="w-full border border-hairline-strong rounded-lg px-3 py-2.5 text-sm bg-canvas text-ink font-mono"
+                className="w-full min-w-0 border border-hairline-strong rounded-lg px-3 py-2.5 text-sm bg-canvas text-ink font-mono"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label htmlFor="check-out" className="block text-xs text-steel mb-1">퇴근 시간</label>
               <input
                 id="check-out"
                 type="time"
                 value={checkOutTime}
                 onChange={(e) => setCheckOutTime(e.target.value)}
-                className="w-full border border-hairline-strong rounded-lg px-3 py-2.5 text-sm bg-canvas text-ink font-mono"
+                className="w-full min-w-0 border border-hairline-strong rounded-lg px-3 py-2.5 text-sm bg-canvas text-ink font-mono"
               />
             </div>
           </div>
