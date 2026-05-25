@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { isLoggedIn } from '@/lib/auth';
@@ -8,7 +8,6 @@ import { fetchTargetLocation, saveTargetLocation } from '@/lib/api';
 import {
   getStoredLocation,
   setStoredLocation,
-  getCurrentPosition,
   type LatLng,
 } from '@/lib/location';
 import {
@@ -19,8 +18,16 @@ import {
   isSubscribed,
   registerSubscription,
 } from '@/lib/push';
-import { ArrowLeft, ChevronRight, Smartphone } from 'lucide-react';
+import { searchAddress, type GeocodingResult } from '@/lib/geocoding';
+import {
+  loadGeofenceConfig,
+  saveGeofenceConfig,
+  startGeofence,
+  stopGeofence,
+  type GeofenceConfig,
+} from '@/lib/geofence';
 import { isNative } from '@/lib/native';
+import { ArrowLeft, ChevronRight, Smartphone, MapPin, Clock, Search } from 'lucide-react';
 
 const LocationMap = dynamic(() => import('@/components/LocationMap'), { ssr: false });
 
@@ -43,28 +50,104 @@ export default function SettingsPage() {
   const [pushSupported, setPushSupported] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
 
+  const [addressQuery, setAddressQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState('');
   const [targetLocation, setTargetLocation] = useState<LatLng | null>(null);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState('');
   const [locationSaved, setLocationSaved] = useState(false);
+
+  const [checkInTime, setCheckInTime] = useState('09:00');
+  const [checkOutTime, setCheckOutTime] = useState('12:00');
+  const [geofenceActive, setGeofenceActive] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     isPushSupported().then(setPushSupported);
     isSubscribed().then(setPushEnabled);
 
-    (async () => {
-      if (isLoggedIn()) {
-        const serverLoc = await fetchTargetLocation();
-        if (serverLoc) {
-          setTargetLocation({ lat: serverLoc.lat, lng: serverLoc.lng });
-          return;
+    // Load saved config
+    const saved = loadGeofenceConfig();
+    if (saved) {
+      setTargetLocation(saved.target);
+      setSelectedLabel(saved.label);
+      setCheckInTime(`${String(saved.checkInHour).padStart(2, '0')}:${String(saved.checkInMinute).padStart(2, '0')}`);
+      setCheckOutTime(`${String(saved.checkOutHour).padStart(2, '0')}:${String(saved.checkOutMinute).padStart(2, '0')}`);
+      setGeofenceActive(true);
+    } else {
+      (async () => {
+        let loc: LatLng | null = null;
+        if (isLoggedIn()) {
+          const serverLoc = await fetchTargetLocation();
+          if (serverLoc) loc = { lat: serverLoc.lat, lng: serverLoc.lng };
         }
-      }
-      const stored = getStoredLocation();
-      if (stored) setTargetLocation({ lat: stored.lat, lng: stored.lng });
-    })();
+        if (!loc) {
+          const stored = getStoredLocation();
+          if (stored) loc = { lat: stored.lat, lng: stored.lng };
+        }
+        if (loc) setTargetLocation(loc);
+      })();
+    }
   }, []);
+
+  const handleAddressSearch = (query: string) => {
+    setAddressQuery(query);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    searchTimer.current = setTimeout(async () => {
+      setSearchLoading(true);
+      const results = await searchAddress(query);
+      setSearchResults(results);
+      setSearchLoading(false);
+    }, 500);
+  };
+
+  const handleSelectAddress = (result: GeocodingResult) => {
+    const loc: LatLng = { lat: parseFloat(result.lat), lng: parseFloat(result.lon) };
+    setTargetLocation(loc);
+    setSelectedLabel(result.display_name.split(',').slice(0, 2).join(','));
+    setAddressQuery('');
+    setSearchResults([]);
+  };
+
+  const handleSaveAll = async () => {
+    if (!targetLocation) return;
+
+    const [inH, inM] = checkInTime.split(':').map(Number);
+    const [outH, outM] = checkOutTime.split(':').map(Number);
+
+    const config: GeofenceConfig = {
+      target: targetLocation,
+      radius: 10,
+      checkInHour: inH,
+      checkInMinute: inM,
+      checkOutHour: outH,
+      checkOutMinute: outM,
+      label: selectedLabel || 'B-Mart 근무지',
+    };
+
+    saveGeofenceConfig(config);
+
+    if (isLoggedIn()) {
+      await saveTargetLocation(targetLocation);
+    } else {
+      setStoredLocation({ ...targetLocation, label: config.label });
+    }
+
+    if (isNative) {
+      await stopGeofence();
+      await startGeofence(config);
+    }
+
+    setGeofenceActive(true);
+    setLocationSaved(true);
+    setTimeout(() => setLocationSaved(false), 2000);
+  };
 
   const handlePushToggle = async () => {
     setPushLoading(true);
@@ -73,45 +156,12 @@ export default function SettingsPage() {
       setPushEnabled(false);
     } else {
       const granted = await requestPermission();
-      if (!granted) {
-        setPushLoading(false);
-        return;
-      }
+      if (!granted) { setPushLoading(false); return; }
       const sub = await subscribe();
-      if (sub) {
-        await registerSubscription();
-      }
+      if (sub) await registerSubscription();
       setPushEnabled(!!sub);
     }
     setPushLoading(false);
-  };
-
-  const handleUseCurrentLocation = async () => {
-    setLocationLoading(true);
-    setLocationError('');
-    try {
-      const pos = await getCurrentPosition();
-      setTargetLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-    } catch (err) {
-      setLocationError(String(err));
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
-  const handleMarkerDrag = (pos: LatLng) => {
-    setTargetLocation(pos);
-  };
-
-  const handleSaveLocation = async () => {
-    if (!targetLocation) return;
-    if (isLoggedIn()) {
-      await saveTargetLocation(targetLocation);
-    } else {
-      setStoredLocation(targetLocation);
-    }
-    setLocationSaved(true);
-    setTimeout(() => setLocationSaved(false), 2000);
   };
 
   return (
@@ -127,10 +177,7 @@ export default function SettingsPage() {
         {/* Onboarding Reset */}
         <button
           type="button"
-          onClick={() => {
-            localStorage.removeItem('bmark-onboarded');
-            push('/');
-          }}
+          onClick={() => { localStorage.removeItem('bmark-onboarded'); push('/'); }}
           className="w-full bg-brand-navy rounded-xl p-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform shadow-sm"
         >
           <Smartphone size={22} className="text-on-dark" />
@@ -140,6 +187,7 @@ export default function SettingsPage() {
           </div>
           <ChevronRight size={18} className="ml-auto text-on-dark-muted" />
         </button>
+
         {/* Push Notifications */}
         <div>
           <span className="block text-sm font-medium text-slate mb-2">출퇴근 알림</span>
@@ -160,9 +208,7 @@ export default function SettingsPage() {
               onClick={handlePushToggle}
               disabled={pushLoading}
               className={`w-full py-3 rounded-lg font-medium border-2 ${
-                pushEnabled
-                  ? 'border-error bg-card-tint-rose text-error'
-                  : 'border-primary bg-card-tint-lavender text-primary'
+                pushEnabled ? 'border-error bg-card-tint-rose text-error' : 'border-primary bg-card-tint-lavender text-primary'
               }`}
             >
               {pushLoading ? '처리 중...' : pushEnabled ? '알림 끄기' : '알림 켜기'}
@@ -170,46 +216,118 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Target Location */}
+        {/* Work Location */}
         <div>
-          <span className="block text-sm font-medium text-slate mb-2">출근 위치 설정</span>
-          <p className="text-xs text-steel mb-2">설정된 위치 10m 이내에서만 출근 체크인이 가능합니다.</p>
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin size={16} className="text-primary" />
+            <span className="text-sm font-medium text-slate">근무지 설정</span>
+          </div>
+          <p className="text-xs text-steel mb-3">주소를 검색하여 근무지를 설정하세요. 반경 10m 이내 도착 시 자동 인식됩니다.</p>
 
-          <button
-            type="button"
-            onClick={handleUseCurrentLocation}
-            disabled={locationLoading}
-            className="w-full py-2 rounded-lg border-2 border-primary bg-card-tint-lavender text-primary font-medium mb-3 disabled:opacity-40"
-          >
-            {locationLoading ? '위치 가져오는 중...' : '📍 현재 위치'}
-          </button>
+          {/* Address Search */}
+          <div className="relative mb-3">
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-steel" />
+                <input
+                  type="text"
+                  value={addressQuery}
+                  onChange={(e) => handleAddressSearch(e.target.value)}
+                  placeholder="주소 검색 (예: 서초동, 강남역)"
+                  className="w-full border border-hairline-strong rounded-lg pl-9 pr-3 py-2.5 text-sm bg-canvas text-ink"
+                />
+              </div>
+            </div>
 
-          {locationError && (
-            <p className="text-xs text-error mb-2">{locationError}</p>
-          )}
+            {searchLoading && (
+              <p className="text-xs text-steel mt-1">검색 중...</p>
+            )}
 
+            {searchResults.length > 0 && (
+              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-canvas border border-hairline rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {searchResults.map((r, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleSelectAddress(r)}
+                    className="w-full text-left px-3 py-2.5 text-sm text-charcoal hover:bg-surface border-b border-hairline last:border-0"
+                  >
+                    {r.display_name.split(',').slice(0, 3).join(',')}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Selected Location */}
           {targetLocation && (
             <>
+              <div className="bg-canvas rounded-lg border border-hairline p-3 mb-3">
+                <p className="text-sm font-medium text-ink">{selectedLabel || 'B-Mart 근무지'}</p>
+                <p className="text-xs text-steel mt-0.5">
+                  {targetLocation.lat.toFixed(6)}, {targetLocation.lng.toFixed(6)}
+                </p>
+              </div>
               <LocationMap
                 center={targetLocation}
                 markerPosition={targetLocation}
-                onMarkerDrag={handleMarkerDrag}
-                draggable
+                draggable={false}
                 radius={10}
-                height="250px"
+                height="200px"
                 className="rounded-lg overflow-hidden border border-hairline mb-3"
               />
-              <p className="text-xs text-steel mb-2">
-                마커를 드래그하여 위치를 조정할 수 있습니다. 반경 10m.
-              </p>
-              <button
-                type="button"
-                onClick={handleSaveLocation}
-                className="w-full py-2 rounded-lg bg-success text-on-dark font-medium"
-              >
-                {locationSaved ? '저장 완료' : '위치 저장'}
-              </button>
             </>
+          )}
+        </div>
+
+        {/* Commute Times */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Clock size={16} className="text-primary" />
+            <span className="text-sm font-medium text-slate">출퇴근 시간</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label htmlFor="check-in" className="block text-xs text-steel mb-1">출근 시간</label>
+              <input
+                id="check-in"
+                type="time"
+                value={checkInTime}
+                onChange={(e) => setCheckInTime(e.target.value)}
+                className="w-full border border-hairline-strong rounded-lg px-3 py-2.5 text-sm bg-canvas text-ink font-mono"
+              />
+            </div>
+            <div>
+              <label htmlFor="check-out" className="block text-xs text-steel mb-1">퇴근 시간</label>
+              <input
+                id="check-out"
+                type="time"
+                value={checkOutTime}
+                onChange={(e) => setCheckOutTime(e.target.value)}
+                className="w-full border border-hairline-strong rounded-lg px-3 py-2.5 text-sm bg-canvas text-ink font-mono"
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-steel mb-3">
+            출근 시간 ±1시간 내 근무지 반경(10m) 도착 시 Shiftee가 자동 실행됩니다.
+            퇴근 시간에는 알림이 전송됩니다.
+          </p>
+
+          <button
+            type="button"
+            onClick={handleSaveAll}
+            disabled={!targetLocation}
+            className="w-full py-3 rounded-xl font-bold text-base bg-success text-on-dark disabled:opacity-40 active:scale-[0.98] transition-transform"
+          >
+            {locationSaved ? '저장 완료' : geofenceActive ? '설정 업데이트' : '설정 저장'}
+          </button>
+
+          {geofenceActive && (
+            <p className="text-center text-xs text-success mt-2 font-medium">
+              지오펜싱 활성 — {checkInTime} 출근 / {checkOutTime} 퇴근
+            </p>
           )}
         </div>
 
