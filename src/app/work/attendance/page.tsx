@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { isNative, launchShiftee as nativeLaunchShiftee, Geolocation } from '@/lib/native';
+import { isNative, launchShiftee as nativeLaunchShiftee } from '@/lib/native';
 import {
   getCurrentPosition,
   getDistance,
@@ -46,14 +46,6 @@ export default function AttendancePage() {
       setLocationLoading(true);
       setLocationError('');
       try {
-        if (isNative) {
-          const perm = await Geolocation.requestPermissions();
-          if (perm.location === 'denied' || perm.coarseLocation === 'denied') {
-            setLocationError('위치 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.');
-            setLocationLoading(false);
-            return;
-          }
-        }
         const pos = await getCurrentPosition();
         const user: LatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(user);

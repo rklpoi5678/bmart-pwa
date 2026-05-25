@@ -84,8 +84,9 @@ export async function getCurrentPosition(): Promise<GeolocationPosition> {
       } as GeolocationPosition;
     }
   } catch (e) {
-    if (e instanceof Error && e.message.includes('권한이 거부')) throw e;
-    // Fall through to browser API
+    // On native, don't fall through to browser API — throw the real error
+    const { Capacitor } = await import('@capacitor/core');
+    if (Capacitor.isNativePlatform()) throw e;
   }
 
   return new Promise((resolve, reject) => {
