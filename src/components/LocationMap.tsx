@@ -7,6 +7,7 @@ import type { LatLng } from '@/lib/location';
 interface LocationMapProps {
   center: LatLng;
   markerPosition: LatLng;
+  userLocation?: LatLng | null;
   onMarkerDrag?: (pos: LatLng) => void;
   draggable?: boolean;
   radius?: number;
@@ -18,6 +19,7 @@ interface LocationMapProps {
 export default function LocationMap({
   center,
   markerPosition,
+  userLocation,
   onMarkerDrag,
   draggable = false,
   radius = 60,
@@ -29,6 +31,7 @@ export default function LocationMap({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const circleRef = useRef<L.Circle | null>(null);
+  const userMarkerRef = useRef<L.Marker | null>(null);
   const dragEndRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -49,6 +52,18 @@ export default function LocationMap({
     }).addTo(map);
 
     const marker = L.marker([markerPosition.lat, markerPosition.lng], { draggable }).addTo(map);
+
+    // Blue dot for user location
+    if (userLocation) {
+      const blueIcon = L.divIcon({
+        className: '',
+        html: '<div style="width:16px;height:16px;background:#2383e2;border:3px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      });
+      const uMarker = L.marker([userLocation.lat, userLocation.lng], { icon: blueIcon }).addTo(map);
+      userMarkerRef.current = uMarker;
+    }
 
     if (showRadius) {
       const circle = L.circle([markerPosition.lat, markerPosition.lng], {
@@ -84,9 +99,10 @@ export default function LocationMap({
       mapInstanceRef.current = null;
       markerRef.current = null;
       circleRef.current = null;
+      userMarkerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center.lat, center.lng, markerPosition.lat, markerPosition.lng, draggable, showRadius, radius, onMarkerDrag]);
+  }, [center.lat, center.lng, markerPosition.lat, markerPosition.lng, draggable, showRadius, radius, onMarkerDrag, userLocation]);
 
   useEffect(() => {
     if (markerRef.current) {
@@ -98,7 +114,10 @@ export default function LocationMap({
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setView([markerPosition.lat, markerPosition.lng]);
     }
-  }, [markerPosition.lat, markerPosition.lng]);
+    if (userMarkerRef.current && userLocation) {
+      userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
+    }
+  }, [markerPosition.lat, markerPosition.lng, userLocation]);
 
   return (
     <div style={{ height, width: '100%', isolation: 'isolate' }} className={className}>
