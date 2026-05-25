@@ -230,6 +230,7 @@ export default function AttendancePage() {
             <LocationMap
               center={userLocation || config.target}
               markerPosition={config.target}
+              userLocation={userLocation}
               draggable={false}
               radius={config.radius}
               height="220px"
