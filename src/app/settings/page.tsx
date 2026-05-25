@@ -20,6 +20,7 @@ import {
   registerSubscription,
 } from '@/lib/push';
 import { ArrowLeft, ChevronRight, Smartphone } from 'lucide-react';
+import { isNative } from '@/lib/native';
 
 const LocationMap = dynamic(() => import('@/components/LocationMap'), { ssr: false });
 
@@ -142,7 +143,13 @@ export default function SettingsPage() {
         {/* Push Notifications */}
         <div>
           <span className="block text-sm font-medium text-slate mb-2">출퇴근 알림</span>
-          {!pushSupported ? (
+          {isNative ? (
+            <div className="bg-card-tint-lavender border border-hairline rounded-xl p-3">
+              <p className="text-sm text-charcoal font-medium">네이티브 앱 알림 활성화</p>
+              <p className="text-xs text-steel mt-1">지오펜싱 설정 시 출퇴근 시간에 근처 도착하면 자동 알림이 표시됩니다.</p>
+              <p className="text-xs text-steel mt-1">앱 설정에서 알림 권한을 허용해주세요.</p>
+            </div>
+          ) : !pushSupported ? (
             <div className="bg-card-tint-yellow border border-hairline rounded-xl p-3">
               <p className="text-sm text-charcoal">이 브라우저는 푸시 알림을 지원하지 않습니다.</p>
               <p className="text-xs text-steel mt-1">iOS: 단축어 앱으로 시간 기반 자동화를 설정하세요.</p>
