@@ -84,9 +84,10 @@ export async function getCurrentPosition(): Promise<GeolocationPosition> {
       } as GeolocationPosition;
     }
   } catch (e) {
-    // On native, don't fall through to browser API — throw the real error
+    // On native, if Capacitor plugin fails, fall through to WKWebView's navigator.geolocation
+    // which uses a different iOS permission prompt path
     const { Capacitor } = await import('@capacitor/core');
-    if (Capacitor.isNativePlatform()) throw e;
+    if (!Capacitor.isNativePlatform()) throw e;
   }
 
   return new Promise((resolve, reject) => {
