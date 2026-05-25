@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { isNative, launchShiftee as nativeLaunchShiftee } from '@/lib/native';
+import { isNative, launchShiftee as nativeLaunchShiftee, Geolocation } from '@/lib/native';
 import {
   getCurrentPosition,
   getDistance,
@@ -26,7 +26,6 @@ export default function AttendancePage() {
   const [distance, setDistance] = useState<number | null>(null);
   const [inRange, setInRange] = useState(false);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
-  const [locationRequested, setLocationRequested] = useState(false);
 
   useEffect(() => {
     const tick = setInterval(() => setNow(new Date()), 1000);
@@ -39,7 +38,7 @@ export default function AttendancePage() {
   }, []);
 
   useEffect(() => {
-    if (!config || !locationRequested) {
+    if (!config) {
       setLocationLoading(false);
       return;
     }
@@ -47,6 +46,14 @@ export default function AttendancePage() {
       setLocationLoading(true);
       setLocationError('');
       try {
+        if (isNative) {
+          const perm = await Geolocation.requestPermissions();
+          if (perm.location === 'denied' || perm.coarseLocation === 'denied') {
+            setLocationError('위치 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.');
+            setLocationLoading(false);
+            return;
+          }
+        }
         const pos = await getCurrentPosition();
         const user: LatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(user);
@@ -62,7 +69,7 @@ export default function AttendancePage() {
         setLocationLoading(false);
       }
     })();
-  }, [config, locationRequested]);
+  }, [config]);
 
   // Safety timeout: release loading state if geolocation hangs
   useEffect(() => {
@@ -166,26 +173,7 @@ export default function AttendancePage() {
             )}
           </div>
 
-          {/* Location Permission Prompt */}
-          {!locationRequested ? (
-            <div className="bg-canvas rounded-xl border border-hairline p-5 text-center">
-              <div className="w-14 h-14 rounded-full bg-card-tint-lavender mx-auto mb-3 flex items-center justify-center">
-                <span className="text-2xl">📍</span>
-              </div>
-              <p className="text-base font-semibold text-ink mb-1">위치 확인</p>
-              <p className="text-sm text-steel mb-4">
-                출퇴근 인증을 위해 현재 위치를 확인합니다.<br />
-                근무지 반경 60m 이내인지 확인합니다.
-              </p>
-              <button
-                type="button"
-                onClick={() => setLocationRequested(true)}
-                className="w-full py-3 rounded-xl font-bold text-base bg-primary text-on-dark active:scale-[0.98] transition-transform"
-              >
-                위치 공유하기
-              </button>
-            </div>
-          ) : (
+          {/* Map — show work location with radius */}
           <div className="bg-canvas rounded-lg border border-hairline p-3">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-ink">{config.label || 'B-Mart 근무지'}</p>
@@ -196,10 +184,6 @@ export default function AttendancePage() {
               )}
             </div>
 
-            {locationLoading && !locationError && (
-              <p className="text-xs text-steel mb-2">현재 위치 확인 중...</p>
-            )}
-
             {locationError && (
               <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3 mb-2">
                 <p className="text-sm text-charcoal">GPS: {locationError}</p>
@@ -207,10 +191,18 @@ export default function AttendancePage() {
               </div>
             )}
 
+            {locationLoading && !locationError && (
+              <p className="text-xs text-steel mb-2">현재 위치 확인 중...</p>
+            )}
+
             {!locationLoading && locationError && !locationConfirmed && (
               <button
                 type="button"
-                onClick={() => setLocationRequested(false)}
+                onClick={() => {
+                  setLocationLoading(true);
+                  setLocationError('');
+                  setTimeout(() => { window.location.reload(); }, 100);
+                }}
                 className="w-full py-2 rounded-lg border border-primary text-primary text-sm font-medium bg-card-tint-lavender active:scale-[0.98] transition-transform mt-2"
               >
                 위치 다시 확인
@@ -233,7 +225,6 @@ export default function AttendancePage() {
               </p>
             )}
           </div>
-          )}
 
           {/* Manual Shiftee Launch */}
           <button
