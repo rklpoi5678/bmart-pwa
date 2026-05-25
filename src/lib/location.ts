@@ -10,7 +10,7 @@ export interface TargetLocation {
 }
 
 const LOCATION_KEY = 'bmark-target-location';
-const CHECK_RADIUS_M = 30;
+const CHECK_RADIUS_M = 60;
 
 export function getStoredLocation(): TargetLocation | null {
   if (typeof window === 'undefined') return null;

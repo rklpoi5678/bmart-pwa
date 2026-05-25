@@ -63,6 +63,30 @@ export default function AttendancePage() {
     })();
   }, [config]);
 
+  // Safety timeout: release loading state if geolocation hangs
+  useEffect(() => {
+    if (!locationLoading) return;
+    const t = setTimeout(() => {
+      setLocationLoading(false);
+      if (!locationConfirmed && !locationError) {
+        setLocationError('위치 확인 시간 초과. 위치 권한을 확인해주세요.');
+      }
+    }, 15000);
+    return () => clearTimeout(t);
+  }, [locationLoading, locationConfirmed, locationError]);
+
+  // Safety timeout: release loading state if geolocation hangs
+  useEffect(() => {
+    if (!locationLoading) return;
+    const t = setTimeout(() => {
+      setLocationLoading(false);
+      if (!locationConfirmed && !locationError) {
+        setLocationError('위치 확인 시간 초과. 위치 권한을 확인해주세요.');
+      }
+    }, 15000);
+    return () => clearTimeout(t);
+  }, [locationLoading, locationConfirmed, locationError]);
+
   const formatTime = (h: number, m: number) =>
     `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
@@ -173,6 +197,34 @@ export default function AttendancePage() {
 
             {locationLoading && !locationError && (
               <p className="text-xs text-steel mb-2">현재 위치 확인 중...</p>
+            )}
+
+            {!locationLoading && locationError && !locationConfirmed && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationLoading(true);
+                  setLocationError('');
+                  setTimeout(() => { window.location.reload(); }, 100);
+                }}
+                className="w-full py-2 rounded-lg border border-primary text-primary text-sm font-medium bg-card-tint-lavender active:scale-[0.98] transition-transform mt-2"
+              >
+                위치 다시 확인
+              </button>
+            )}
+
+            {!locationLoading && locationError && !locationConfirmed && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationLoading(true);
+                  setLocationError('');
+                  setTimeout(() => { window.location.reload(); }, 100);
+                }}
+                className="w-full py-2 rounded-lg border border-primary text-primary text-sm font-medium bg-card-tint-lavender active:scale-[0.98] transition-transform mt-2"
+              >
+                위치 다시 확인
+              </button>
             )}
 
             <LocationMap

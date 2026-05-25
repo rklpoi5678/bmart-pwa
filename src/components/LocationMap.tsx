@@ -20,7 +20,7 @@ export default function LocationMap({
   markerPosition,
   onMarkerDrag,
   draggable = false,
-  radius = 30,
+  radius = 60,
   showRadius = true,
   height = '300px',
   className,

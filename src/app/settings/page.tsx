@@ -126,7 +126,7 @@ export default function SettingsPage() {
 
     const config: GeofenceConfig = {
       target: targetLocation,
-      radius: 30,
+      radius: 60,
       checkInHour: inH,
       checkInMinute: inM,
       checkOutHour: outH,
@@ -225,7 +225,7 @@ export default function SettingsPage() {
             <MapPin size={16} className="text-primary" />
             <span className="text-sm font-medium text-slate">근무지 설정</span>
           </div>
-          <p className="text-xs text-steel mb-3">주소를 검색하여 근무지를 설정하세요. 반경 30m 이내 도착 시 자동 인식됩니다.</p>
+          <p className="text-xs text-steel mb-3">주소를 검색하여 근무지를 설정하세요. 반경 60m 이내 도착 시 자동 인식됩니다.</p>
 
           {/* Address Search */}
           {!process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY && (
@@ -285,7 +285,7 @@ export default function SettingsPage() {
                 center={targetLocation}
                 markerPosition={targetLocation}
                 draggable={false}
-                radius={30}
+                radius={60}
                 height="200px"
                 className="rounded-lg overflow-hidden border border-hairline mb-3"
               />
@@ -324,7 +324,7 @@ export default function SettingsPage() {
           </div>
 
           <p className="text-xs text-steel mb-3">
-            출근 시간 ±1시간 내 근무지 반경(30m) 도착 시 Shiftee가 자동 실행됩니다.
+            출근 시간 ±1시간 내 근무지 반경(60m) 도착 시 Shiftee가 자동 실행됩니다.
             퇴근 시간에는 알림이 전송됩니다.
           </p>
 
