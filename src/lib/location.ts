@@ -49,14 +49,26 @@ export function isWithinRadius(user: LatLng, target: LatLng): boolean {
 }
 
 export async function getCurrentPosition(): Promise<GeolocationPosition> {
-  // Capacitor native: use plugin directly (navigator.geolocation may not work in WebView)
+  // Capacitor native: request permission first, then get position
   try {
     const { Capacitor } = await import('@capacitor/core');
     if (Capacitor.isNativePlatform()) {
       const { Geolocation } = await import('@capacitor/geolocation');
+
+      // Request permission explicitly (required on Android 12+ / iOS)
+      const permStatus = await Geolocation.checkPermissions();
+      if (permStatus.location === 'prompt' || permStatus.location === 'prompt-with-rationale') {
+        const reqResult = await Geolocation.requestPermissions();
+        if (reqResult.location === 'denied') {
+          throw new Error('위치 권한이 거부되었습니다. 설정에서 위치 권한을 허용해주세요.');
+        }
+      } else if (permStatus.location === 'denied') {
+        throw new Error('위치 권한이 거부되었습니다. 설정에서 위치 권한을 허용해주세요.');
+      }
+
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 15000,
       });
       return {
         coords: {
@@ -71,8 +83,9 @@ export async function getCurrentPosition(): Promise<GeolocationPosition> {
         timestamp: pos.timestamp,
       } as GeolocationPosition;
     }
-  } catch {
-    // Not Capacitor — fall through to browser API
+  } catch (e) {
+    if (e instanceof Error && e.message.includes('권한이 거부')) throw e;
+    // Fall through to browser API
   }
 
   return new Promise((resolve, reject) => {

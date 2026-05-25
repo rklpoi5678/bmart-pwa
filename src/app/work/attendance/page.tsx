@@ -164,28 +164,25 @@ export default function AttendancePage() {
               )}
             </div>
 
-            {locationLoading && (
-              <div className="h-[220px] flex items-center justify-center bg-surface rounded-lg">
-                <p className="text-steel text-sm">위치 확인 중...</p>
-              </div>
-            )}
-
             {locationError && (
               <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3 mb-2">
                 <p className="text-sm text-charcoal">GPS: {locationError}</p>
+                <p className="text-xs text-steel mt-1">근무지 위치만 표시됩니다.</p>
               </div>
             )}
 
-            {config.target && !locationLoading && (
-              <LocationMap
-                center={userLocation || config.target}
-                markerPosition={config.target}
-                draggable={false}
-                radius={config.radius}
-                height="220px"
-                className="rounded-lg overflow-hidden mb-2"
-              />
+            {locationLoading && !locationError && (
+              <p className="text-xs text-steel mb-2">현재 위치 확인 중...</p>
             )}
+
+            <LocationMap
+              center={userLocation || config.target}
+              markerPosition={config.target}
+              draggable={false}
+              radius={config.radius}
+              height="220px"
+              className="rounded-lg overflow-hidden mb-2"
+            />
 
             {distance != null && (
               <p className="text-xs text-steel text-center">
