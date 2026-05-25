@@ -26,6 +26,7 @@ export default function AttendancePage() {
   const [distance, setDistance] = useState<number | null>(null);
   const [inRange, setInRange] = useState(false);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
+  const [locationRequested, setLocationRequested] = useState(false);
 
   useEffect(() => {
     const tick = setInterval(() => setNow(new Date()), 1000);
@@ -38,7 +39,7 @@ export default function AttendancePage() {
   }, []);
 
   useEffect(() => {
-    if (!config) {
+    if (!config || !locationRequested) {
       setLocationLoading(false);
       return;
     }
@@ -61,19 +62,7 @@ export default function AttendancePage() {
         setLocationLoading(false);
       }
     })();
-  }, [config]);
-
-  // Safety timeout: release loading state if geolocation hangs
-  useEffect(() => {
-    if (!locationLoading) return;
-    const t = setTimeout(() => {
-      setLocationLoading(false);
-      if (!locationConfirmed && !locationError) {
-        setLocationError('위치 확인 시간 초과. 위치 권한을 확인해주세요.');
-      }
-    }, 15000);
-    return () => clearTimeout(t);
-  }, [locationLoading, locationConfirmed, locationError]);
+  }, [config, locationRequested]);
 
   // Safety timeout: release loading state if geolocation hangs
   useEffect(() => {
@@ -177,7 +166,26 @@ export default function AttendancePage() {
             )}
           </div>
 
-          {/* Map — show work location with radius */}
+          {/* Location Permission Prompt */}
+          {!locationRequested ? (
+            <div className="bg-canvas rounded-xl border border-hairline p-5 text-center">
+              <div className="w-14 h-14 rounded-full bg-card-tint-lavender mx-auto mb-3 flex items-center justify-center">
+                <span className="text-2xl">📍</span>
+              </div>
+              <p className="text-base font-semibold text-ink mb-1">위치 확인</p>
+              <p className="text-sm text-steel mb-4">
+                출퇴근 인증을 위해 현재 위치를 확인합니다.<br />
+                근무지 반경 60m 이내인지 확인합니다.
+              </p>
+              <button
+                type="button"
+                onClick={() => setLocationRequested(true)}
+                className="w-full py-3 rounded-xl font-bold text-base bg-primary text-on-dark active:scale-[0.98] transition-transform"
+              >
+                위치 공유하기
+              </button>
+            </div>
+          ) : (
           <div className="bg-canvas rounded-lg border border-hairline p-3">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-ink">{config.label || 'B-Mart 근무지'}</p>
@@ -188,6 +196,10 @@ export default function AttendancePage() {
               )}
             </div>
 
+            {locationLoading && !locationError && (
+              <p className="text-xs text-steel mb-2">현재 위치 확인 중...</p>
+            )}
+
             {locationError && (
               <div className="bg-card-tint-yellow border border-hairline rounded-lg p-3 mb-2">
                 <p className="text-sm text-charcoal">GPS: {locationError}</p>
@@ -195,32 +207,10 @@ export default function AttendancePage() {
               </div>
             )}
 
-            {locationLoading && !locationError && (
-              <p className="text-xs text-steel mb-2">현재 위치 확인 중...</p>
-            )}
-
             {!locationLoading && locationError && !locationConfirmed && (
               <button
                 type="button"
-                onClick={() => {
-                  setLocationLoading(true);
-                  setLocationError('');
-                  setTimeout(() => { window.location.reload(); }, 100);
-                }}
-                className="w-full py-2 rounded-lg border border-primary text-primary text-sm font-medium bg-card-tint-lavender active:scale-[0.98] transition-transform mt-2"
-              >
-                위치 다시 확인
-              </button>
-            )}
-
-            {!locationLoading && locationError && !locationConfirmed && (
-              <button
-                type="button"
-                onClick={() => {
-                  setLocationLoading(true);
-                  setLocationError('');
-                  setTimeout(() => { window.location.reload(); }, 100);
-                }}
+                onClick={() => setLocationRequested(false)}
                 className="w-full py-2 rounded-lg border border-primary text-primary text-sm font-medium bg-card-tint-lavender active:scale-[0.98] transition-transform mt-2"
               >
                 위치 다시 확인
@@ -243,6 +233,7 @@ export default function AttendancePage() {
               </p>
             )}
           </div>
+          )}
 
           {/* Manual Shiftee Launch */}
           <button
