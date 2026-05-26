@@ -57,3 +57,6 @@ worker/.wrangler/
 # Capacitor native platforms
 android/
 ios/
+
+# docs
+docs/
