@@ -1,4 +1,4 @@
-export type QueueItemType = 'rack' | 'freshness' | 'attendance';
+export type QueueItemType = 'rack' | 'freshness' | 'attendance' | 'timestamp';
 export type QueueItemStatus = 'pending' | 'sent' | 'failed';
 export type QueueItemTarget = 'slack' | 'sheets';
 
@@ -28,7 +28,16 @@ export interface AttendanceQueueItem extends QueueItemBase {
   data: AttendanceData;
 }
 
-export type QueueItem = RackQueueItem | FreshnessQueueItem | AttendanceQueueItem;
+export interface TimestampData {
+  note?: string;
+}
+
+export interface TimestampQueueItem extends QueueItemBase {
+  type: 'timestamp';
+  data: TimestampData;
+}
+
+export type QueueItem = RackQueueItem | FreshnessQueueItem | AttendanceQueueItem | TimestampQueueItem;
 
 export interface RackData {
   rackNumber: string;
@@ -49,6 +58,7 @@ export const TYPE_LABELS: Record<QueueItemType, string> = {
   rack: '랙검사',
   freshness: '선도문의',
   attendance: '출퇴근',
+  timestamp: '타임스탬프',
 };
 
 export const STATUS_LABELS: Record<QueueItemStatus, string> = {

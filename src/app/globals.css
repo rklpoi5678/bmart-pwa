@@ -1,5 +1,115 @@
 @import "tailwindcss";
 
+/* Timestamp stamp fonts — extracted from com.artifyapp.timestamp APK */
+@font-face {
+  font-family: 'HelveticaNeue-CondensedBold';
+  src: url('/fonts/helvetica_neue_condensed_bold.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TickingTimebombBB';
+  src: url('/fonts/ticking_timebomb_bb_regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'BlanchCaps';
+  src: url('/fonts/blanch_caps.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SpoqaHanSans';
+  src: url('/fonts/spoqa_han_sans_thin.ttf') format('truetype');
+  font-weight: 200;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SpoqaHanSans';
+  src: url('/fonts/spoqa_han_sans_regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SpoqaHanSans';
+  src: url('/fonts/spoqa_han_sans_bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AmaticSC-Bold';
+  src: url('/fonts/amaticsc_bold.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NanumBarunpen';
+  src: url('/fonts/nanum_barunpen_regular.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'BM-Dohyeon';
+  src: url('/fonts/bm_dohyeon.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'BM-Jua';
+  src: url('/fonts/bm_jua.otf') format('opentype');
+  font-display: swap;
+}
+
+/* Timestamp stamp fonts — extracted from com.artifyapp.timestamp APK */
+@font-face {
+  font-family: 'HelveticaNeue-CondensedBold';
+  src: url('/fonts/helvetica_neue_condensed_bold.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TickingTimebombBB';
+  src: url('/fonts/ticking_timebomb_bb_regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'BlanchCaps';
+  src: url('/fonts/blanch_caps.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SpoqaHanSans';
+  src: url('/fonts/spoqa_han_sans_thin.ttf') format('truetype');
+  font-weight: 200;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SpoqaHanSans';
+  src: url('/fonts/spoqa_han_sans_regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SpoqaHanSans';
+  src: url('/fonts/spoqa_han_sans_bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AmaticSC-Bold';
+  src: url('/fonts/amaticsc_bold.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NanumBarunpen';
+  src: url('/fonts/nanum_barunpen_regular.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'BM-Dohyeon';
+  src: url('/fonts/bm_dohyeon.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'BM-Jua';
+  src: url('/fonts/bm_jua.otf') format('opentype');
+  font-display: swap;
+}
+
 @theme inline {
   /* Brand & Primary */
   --color-primary: #6B5CE7;

@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { getQueueSummary } from '@/lib/queue';
 import type { QueueItemStatus } from '@/db/schema';
 import OnboardingModal from '@/components/OnboardingModal';
+import CaptureModal from '@/components/CaptureModal';
+import SubmitModal from '@/components/SubmitModal';
+import { hasStampSetting } from '@/lib/timestamp/stamp-settings';
 import {
   ClipboardList,
   Trash2,
@@ -19,6 +22,7 @@ import {
   Wifi,
   WifiOff,
   QrCode,
+  Camera,
 } from 'lucide-react';
 
 const CORE_ITEMS: { key: string; icon: React.ReactNode; label: string; desc: string; route: string }[] = [
@@ -32,6 +36,7 @@ const SUB_ITEMS: { key: string; icon: React.ReactNode; label: string; desc: stri
   { key: 'attendance', icon: <Clock size={22} />, label: '출퇴근', desc: '출근/퇴근 기록', route: '/work/attendance' },
   { key: 'accounts', icon: <Key size={22} />, label: '계정 등록', desc: 'QR 로그인 관리', route: '/accounts' },
   { key: 'qr-scrap', icon: <QrCode size={22} />, label: '불용로케이션 QR', desc: 'QR 코드 생성', route: '/qr-scrap' },
+  { key: 'submit', icon: <Send size={22} />, label: '제출용', desc: '구글폼/시트/드라이브', route: '' },
 ];
 
 type Summary = Record<QueueItemStatus, number>;
@@ -42,6 +47,8 @@ export default function HomePage() {
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [showOnboarding, setShowOnboarding] = useState(() => typeof window !== 'undefined' ? !localStorage.getItem('bmark-onboarded') : false);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [showCaptureModal, setShowCaptureModal] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
   const installPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -80,6 +87,14 @@ export default function HomePage() {
     }
   };
 
+  const handleTimestampClick = () => {
+    if (!hasStampSetting()) {
+      push('/settings');
+    } else {
+      setShowCaptureModal(true);
+    }
+  };
+
   const hasPending = summary.pending > 0;
   const hasFailed = summary.failed > 0;
 
@@ -92,6 +107,9 @@ export default function HomePage() {
           <p className="text-sm text-slate">품질지킴이</p>
         </div>
         <div className="flex items-center gap-3">
+          <button type="button" onClick={handleTimestampClick} className="text-ink/60 hover:text-ink transition-colors" aria-label="타임스탬프">
+            <Camera size={22} />
+          </button>
           <button type="button" onClick={() => push('/settings')} className="text-ink/60 hover:text-ink transition-colors" aria-label="설정">
             <Settings size={22} />
           </button>
@@ -189,7 +207,7 @@ export default function HomePage() {
             <button
               key={item.key}
               type="button"
-              onClick={() => push(item.route)}
+              onClick={() => item.key === 'submit' ? setShowSubmitModal(true) : push(item.route)}
               className="w-full bg-canvas rounded-xl border border-hairline p-3.5 flex items-center gap-3 text-left active:scale-[0.98] transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <span className="text-slate">{item.icon}</span>
@@ -200,6 +218,7 @@ export default function HomePage() {
               <ChevronRight size={16} className="ml-auto text-steel" />
             </button>
           ))}
+
         </div>
       </div>
 
@@ -245,6 +264,16 @@ export default function HomePage() {
       )}
 
       {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
+
+      {/* Timestamp Capture Modal */}
+      <CaptureModal
+        open={showCaptureModal}
+        onClose={() => setShowCaptureModal(false)}
+      />
+      <SubmitModal
+        open={showSubmitModal}
+        onClose={() => setShowSubmitModal(false)}
+      />
     </div>
   );
 }
