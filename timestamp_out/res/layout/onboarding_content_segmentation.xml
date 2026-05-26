@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:paddingLeft="24.0dp" android:paddingTop="60.0dp" android:paddingRight="24.0dp" android:layout_width="match_parent" android:layout_height="match_parent" android:paddingHorizontal="24.0dp"
-  xmlns:android="http://schemas.android.com/apk/res/android">
-    <TextView android:textSize="24.0sp" android:textColor="@color/onboarding_text_primary" android:gravity="center" android:id="@id/segmentationTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/onboarding_segmentation_title" android:fontFamily="sans-serif-medium" android:letterSpacing="-0.02" />
-    <TextView android:textSize="14.0sp" android:textColor="@color/onboarding_text_secondary" android:gravity="center" android:id="@id/segmentationDescription" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:text="@string/onboarding_segmentation_description" />
-    <LinearLayout android:orientation="vertical" android:id="@id/segmentationOptionsContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="32.0dp" />
-</LinearLayout>

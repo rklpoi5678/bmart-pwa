@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<merge android:layout_width="match_parent" android:layout_height="match_parent"
-  xmlns:android="http://schemas.android.com/apk/res/android">
-    <ProgressBar android:layout_gravity="bottom" android:id="@id/videoProgressBar" android:focusable="false" android:layout_width="match_parent" android:layout_height="2.0dp" android:progressDrawable="@drawable/adfit_video_progress" android:thumb="@null" android:importantForAccessibility="no" style="@android:style/Widget.ProgressBar.Horizontal" />
-    <ImageView android:layout_gravity="end|top" android:id="@id/videoSoundButton" android:visibility="gone" android:layout_width="26.0dp" android:layout_height="26.0dp" android:layout_margin="8.0dp" android:src="@null" android:scaleType="fitCenter" android:contentDescription="@string/adfit_sound_off_description" />
-    <ImageView android:layout_gravity="center" android:id="@id/videoPlayButton" android:layout_width="50.0dp" android:layout_height="50.0dp" android:src="@null" android:scaleType="fitCenter" android:contentDescription="@string/adfit_play_btn_description" />
-    <ProgressBar android:layout_gravity="center" android:id="@id/videoLoadingProgressBar" android:focusable="false" android:visibility="gone" android:layout_width="50.0dp" android:layout_height="50.0dp" android:scaleType="fitCenter" android:indeterminate="true" android:importantForAccessibility="no" android:indeterminateTint="#f2f2f2" android:indeterminateTintMode="src_atop" />
-</merge>

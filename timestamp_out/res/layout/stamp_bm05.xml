@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
-  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
-    <com.artifyapp.timestamp.view.widget.StampTextView android:textSize="19.0sp" android:id="@id/stampTextView" android:paddingTop="13.0dp" android:paddingBottom="13.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="29.0dp" android:text="@string/sample_date_time_text" android:lineSpacingMultiplier="1.4" android:textAlignment="center" android:paddingStart="20.0dp" android:paddingEnd="20.0dp" app:StampTextView_cornerRadius="20.0dp" app:StampTextView_fillColor="@color/white" app:fontFamily="@font/bm_jua" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
