@@ -27,6 +27,8 @@ import {
   type GeofenceConfig,
 } from '@/lib/geofence';
 import { isNative } from '@/lib/native';
+import { STAMP_TEMPLATES, getStampTemplate, DEFAULT_STAMP_ID } from '@/lib/timestamp/templates';
+import { getSavedStampId, saveStampId } from '@/lib/timestamp/stamp-settings';
 import { ArrowLeft, ChevronRight, Smartphone, MapPin, Clock, Search } from 'lucide-react';
 
 const LocationMap = dynamic(() => import('@/components/LocationMap'), { ssr: false });
@@ -43,6 +45,40 @@ const SCHEDULE_ROWS = [
   { start: '11:35', end: '12:00', duration: '25분', task: '냉장 렉 검품' },
   { start: '12:00', end: '—', duration: '—', task: '부적합품 최종 정리, 업무 보고(구글폼) → 퇴근' },
 ];
+
+function StampPreview({ template }: { template: ReturnType<typeof getStampTemplate> }) {
+  if (!template) return null;
+  const isCenter = template.position === 'center';
+  const isBottom = template.position.startsWith('bottom');
+  const isTop = template.position.startsWith('top');
+  const isLeft = template.position.endsWith('left');
+  const isRight = template.position.endsWith('right');
+  const align = isLeft ? 'items-start' : isRight ? 'items-end' : 'items-center';
+  const justify = isBottom ? 'justify-end' : isTop ? 'justify-start' : 'justify-center';
+  const textAlign = isLeft ? 'text-left' : isRight ? 'text-right' : 'text-center';
+  return (
+    <div className={`relative w-16 h-16 rounded-lg bg-gradient-to-br from-gray-600 to-gray-800 flex ${align} ${justify} p-1 overflow-hidden`}>
+      {/* Simulated photo background with timestamp overlay */}
+      {template.frame === 'box' && (
+        <div className="absolute inset-1 border border-white/70 rounded-sm" />
+      )}
+      <span
+        className={`text-[6px] leading-tight text-white ${textAlign}`}
+        style={{
+          fontFamily: template.timeFont,
+          textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+          lineHeight: '1.3',
+        }}
+      >
+        {template.layout === 'vertical'
+          ? "2026년 5월\n15:30"
+          : template.layout === 'split'
+          ? "15  30\n5월 26일"
+          : "5월 26일  15:30"}
+      </span>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const { back, push } = useRouter();
@@ -61,6 +97,7 @@ export default function SettingsPage() {
   const [checkOutTime, setCheckOutTime] = useState('12:00');
   const [geofenceActive, setGeofenceActive] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [stampId, setStampId] = useState(() => getSavedStampId() || DEFAULT_STAMP_ID);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -342,6 +379,35 @@ export default function SettingsPage() {
               지오펜싱 활성 — {checkInTime} 출근 / {checkOutTime} 퇴근
             </p>
           )}
+        </div>
+
+        {/* Timestamp Stamp Settings */}
+        <div>
+          <span className="block text-sm font-medium text-slate mb-2">타임스탬프 스타일</span>
+          <p className="text-xs text-steel mb-3">선택한 스타일은 타임스탬프 촬영 시 사진에 자동 적용됩니다.</p>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none mb-3">
+            {STAMP_TEMPLATES.map((stamp) => {
+              const selected = stamp.id === stampId;
+              return (
+                <button
+                  key={stamp.id}
+                  type="button"
+                  onClick={() => { setStampId(stamp.id); saveStampId(stamp.id); }}
+                  className={`
+                    flex-shrink-0 w-24 h-28 rounded-xl border-2 flex flex-col items-center justify-center
+                    text-xs font-medium transition-all
+                    ${selected
+                      ? 'border-brand-navy bg-brand-navy/10 text-brand-navy'
+                      : 'border-hairline text-steel hover:border-hairline-strong'
+                    }
+                  `}
+                >
+                  <StampPreview template={stamp} />
+                  <span className="mt-1">{stamp.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Work Schedule */}

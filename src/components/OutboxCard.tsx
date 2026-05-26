@@ -23,10 +23,7 @@ export default function OutboxCard({ item, onRefresh }: OutboxCardProps) {
 
   const handleShare = async () => {
     const ok = await shareItem(item);
-    if (ok) {
-      await updateItemStatus(item.id!, 'sent');
-      onRefresh();
-    }
+    if (ok) onRefresh();
   };
 
   const handleApiSend = async () => {

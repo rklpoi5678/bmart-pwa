@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@id/adrop_popup_ad_container" android:background="@android:color/transparent" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/adrop_popup_ad_content_wrapper" android:background="@android:color/transparent" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipToOutline="true">
+        <FrameLayout android:id="@id/adrop_popup_ad_outer_top_snooze" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/adrop_popup_ad_content" android:background="@android:color/transparent" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipToOutline="true">
+            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+                <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <androidx.recyclerview.widget.RecyclerView android:id="@id/adrop_popup_ads" android:background="@drawable/adrop_popup_ad_top_radius" android:layout_width="match_parent" android:layout_height="match_parent" android:clipToOutline="true" />
+                </LinearLayout>
+                <LinearLayout android:gravity="center" android:orientation="horizontal" android:id="@id/adrop_popup_ad_count_wrapper" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20.0dp" android:layout_alignParentTop="true" android:layout_marginEnd="20.0dp" android:layout_alignParentEnd="true">
+                    <LinearLayout android:orientation="horizontal" android:id="@id/adrop_popup_ad_count" android:background="@drawable/adrop_popup_ad_count" android:paddingLeft="8.0dp" android:paddingTop="4.0dp" android:paddingRight="8.0dp" android:paddingBottom="4.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="8.0dp" android:paddingVertical="4.0dp">
+                        <TextView android:textSize="12.0dp" android:textColor="@android:color/white" android:id="@id/adrop_popup_ad_current" android:background="@android:color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                        <TextView android:textSize="12.0dp" android:textColor="@color/adrop_popup_ad_size" android:background="@android:color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4.0dp" android:layout_marginRight="4.0dp" android:text="/" android:layout_marginHorizontal="4.0dp" />
+                        <TextView android:textSize="12.0dp" android:textColor="@color/adrop_popup_ad_size" android:id="@id/adrop_popup_ad_size" android:background="@android:color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    </LinearLayout>
+                    <ImageView android:id="@id/adrop_popup_ad_inner_close" android:visibility="gone" android:layout_width="44.0dp" android:layout_height="44.0dp" android:src="@null" />
+                </LinearLayout>
+            </RelativeLayout>
+            <FrameLayout android:id="@id/adrop_popup_ad_inner_snooze" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </LinearLayout>
+        <FrameLayout android:id="@id/adrop_popup_ad_outer_bottom_snooze" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    </LinearLayout>
+</RelativeLayout>

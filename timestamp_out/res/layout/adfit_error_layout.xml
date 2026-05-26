@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="vertical" android:id="@id/errorLayout" android:background="@android:color/black" android:paddingTop="0.5dp" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textSize="14.0sp" android:textColor="#e7e7e7" android:gravity="center" android:id="@id/errorMessageView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="19.0dp" android:text="@string/adfit_error_play" />
+    <ImageView android:layout_width="37.0dp" android:layout_height="37.0dp" android:layout_marginTop="14.0dp" android:src="@null" android:scaleType="fitCenter" android:contentDescription="@string/adfit_refresh" />
+</LinearLayout>

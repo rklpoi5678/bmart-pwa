@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import type { QueueItem, QueueItemStatus } from '@/db/schema';
 
-export async function addToQueue(item: Omit<QueueItem, 'id'>): Promise<number> {
+export async function addToQueue(item: Omit<QueueItem, 'id'> & { data?: unknown }): Promise<number> {
   return db.outbox.add(item as QueueItem);
 }
 

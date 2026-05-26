@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/adrop_popup_ad_snooze" android:background="@color/adrop_popup_ad_snooze_bg" android:paddingTop="8.0dp" android:paddingBottom="8.0dp" android:layout_width="match_parent" android:layout_height="48.0dp" android:paddingVertical="8.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:id="@id/adrop_popup_ad_not_again_today_container" android:paddingLeft="20.0dp" android:paddingRight="20.0dp" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" android:paddingHorizontal="20.0dp">
+        <TextView android:textSize="14.0dp" android:textColor="@color/adrop_popup_ad_never_show_again_today" android:gravity="center_vertical" android:layout_gravity="start|center" android:id="@id/adrop_popup_ad_not_again_today" android:paddingLeft="4.0dp" android:paddingRight="4.0dp" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/adrop_popup_ad_never_show_again_today" android:paddingHorizontal="4.0dp" />
+    </FrameLayout>
+    <Space android:id="@id/adrop_popup_ad_spacer" android:visibility="gone" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" />
+    <FrameLayout android:id="@id/adrop_popup_ad_close_container" android:paddingLeft="20.0dp" android:paddingRight="20.0dp" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" android:paddingHorizontal="20.0dp">
+        <TextView android:textSize="14.0dp" android:textColor="@color/adrop_popup_ad_close" android:gravity="center_vertical" android:layout_gravity="end|center" android:id="@id/adrop_popup_ad_close" android:paddingLeft="4.0dp" android:paddingRight="4.0dp" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/adrop_popup_ad_close" android:paddingHorizontal="4.0dp" />
+    </FrameLayout>
+    <FrameLayout android:id="@id/adrop_popup_ad_cta_container" android:paddingLeft="20.0dp" android:paddingRight="20.0dp" android:visibility="gone" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" android:paddingHorizontal="20.0dp">
+        <TextView android:textSize="14.0dp" android:textColor="@color/adrop_popup_ad_close" android:gravity="center_vertical" android:layout_gravity="end|center" android:id="@id/adrop_popup_ad_cta" android:paddingLeft="4.0dp" android:paddingRight="4.0dp" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/adrop_cta_view_details" android:paddingHorizontal="4.0dp" />
+    </FrameLayout>
+</LinearLayout>

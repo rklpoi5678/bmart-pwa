@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="vertical" android:paddingLeft="40.0dp" android:paddingRight="40.0dp" android:layout_width="match_parent" android:layout_height="match_parent" android:paddingHorizontal="40.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:layout_gravity="center" android:layout_width="140.0dp" android:layout_height="140.0dp">
+        <View android:id="@id/permissionIconBackground" android:background="@drawable/background_onboarding_icon" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <ImageView android:layout_gravity="center" android:id="@id/permissionIcon" android:layout_width="80.0dp" android:layout_height="80.0dp" android:src="@drawable/ic_onboarding_camera" android:contentDescription="@null" />
+    </FrameLayout>
+    <TextView android:textSize="26.0sp" android:textColor="@color/onboarding_text_primary" android:id="@id/permissionTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="40.0dp" android:fontFamily="sans-serif-medium" android:textAlignment="center" android:letterSpacing="-0.02" />
+    <TextView android:textSize="16.0sp" android:textColor="@color/onboarding_text_secondary" android:id="@id/permissionDescription" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:lineSpacingExtra="4.0dp" android:textAlignment="center" />
+</LinearLayout>

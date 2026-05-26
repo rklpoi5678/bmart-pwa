@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="18.0sp" android:textColor="@color/white" android:id="@id/dateTextView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/sample_date_text" android:shadowColor="@color/colorShadowDefault" android:shadowRadius="4.0" android:fontFamily="@font/glypha_bold" android:textAlignment="center" android:letterSpacing="0.2" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    <androidx.constraintlayout.widget.Guideline android:orientation="horizontal" android:id="@id/guideline15" android:layout_width="wrap_content" android:layout_height="wrap_content" app:layout_constraintGuide_percent="0.936" />
+    <ImageView android:id="@id/watermarkImageView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:contentDescription="@string/watermark" app:layout_constraintBottom_toTopOf="@id/guideline15" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:srcCompat="@null" />
+</androidx.constraintlayout.widget.ConstraintLayout>

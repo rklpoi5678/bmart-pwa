@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent">
+        <TextView android:textSize="54.0sp" android:textColor="@color/white" android:id="@id/dateTextView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/sample_date_text" android:shadowColor="@color/colorShadowDefault" android:shadowDx="0.0" android:shadowDy="0.0" android:shadowRadius="4.0" android:fontFamily="@font/amaticsc_bold" android:textAlignment="center" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" />
+        <TextView android:textSize="54.0sp" android:textColor="@color/white" android:id="@id/timeTextView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/sample_time_text" android:shadowColor="@color/colorShadowDefault" android:shadowDx="0.0" android:shadowDy="0.0" android:shadowRadius="4.0" android:fontFamily="@font/amaticsc_bold" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" />
+        <ImageView android:id="@id/watermarkImageView" android:paddingTop="15.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:contentDescription="@string/watermark" app:srcCompat="@null" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

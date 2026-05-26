@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { compressFile } from '@/lib/compress';
+import { isNative, capturePhoto, pickFromGallery } from '@/lib/native';
 
 interface PhotoCaptureProps {
   photos: string[];
@@ -14,6 +15,27 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [compressing, setCompressing] = useState(0);
+
+  const addPhotos = useCallback(async (dataUrls: string[]) => {
+    const remaining = maxPhotos - photos.length;
+    const toProcess = dataUrls.slice(0, remaining);
+    if (toProcess.length === 0) return;
+
+    setLoading(true);
+    const compressed = await Promise.all(
+      toProcess.map((url, i) => (async () => {
+        setCompressing(i + 1);
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+        return compressFile(file);
+      })()),
+    );
+
+    onChange([...photos, ...compressed]);
+    setLoading(false);
+    setCompressing(0);
+  }, [photos, onChange, maxPhotos]);
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -28,7 +50,7 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
       toProcess.map((file, i) => (async () => {
         setCompressing(i + 1);
         return compressFile(file);
-      })())
+      })()),
     );
 
     onChange([...photos, ...compressed]);
@@ -39,6 +61,16 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
 
   const remove = (index: number) => {
     onChange(photos.filter((_, i) => i !== index));
+  };
+
+  const handleCapture = async () => {
+    const dataUrl = await capturePhoto();
+    if (dataUrl) addPhotos([dataUrl]);
+  };
+
+  const handlePickFromGallery = async () => {
+    const dataUrl = await pickFromGallery();
+    if (dataUrl) addPhotos([dataUrl]);
   };
 
   return (
@@ -59,15 +91,38 @@ export default function PhotoCapture({ photos, onChange, maxPhotos = 4 }: PhotoC
           </div>
         ))}
         {photos.length < maxPhotos && (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={loading}
-            className="size-20 border-2 border-dashed border-hairline rounded-lg flex items-center justify-center text-steel hover:border-hairline-strong"
-            aria-label="사진 추가"
-          >
-            {loading ? `${compressing}...` : '+'}
-          </button>
+          isNative ? (
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={handleCapture}
+                disabled={loading}
+                className="size-20 border-2 border-dashed border-hairline rounded-lg flex items-center justify-center text-steel hover:border-hairline-strong text-xs"
+                aria-label="사진 촬영"
+              >
+                {loading ? `${compressing}...` : '📷\n촬영'}
+              </button>
+              <button
+                type="button"
+                onClick={handlePickFromGallery}
+                disabled={loading}
+                className="size-20 border-2 border-dashed border-hairline rounded-lg flex items-center justify-center text-steel hover:border-hairline-strong text-xs"
+                aria-label="갤러리에서 선택"
+              >
+                {loading ? '' : '🖼️\n선택'}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={loading}
+              className="size-20 border-2 border-dashed border-hairline rounded-lg flex items-center justify-center text-steel hover:border-hairline-strong"
+              aria-label="사진 추가"
+            >
+              {loading ? `${compressing}...` : '+'}
+            </button>
+          )
         )}
       </div>
       <input

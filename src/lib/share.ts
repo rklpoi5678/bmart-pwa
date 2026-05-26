@@ -1,5 +1,6 @@
 import type { QueueItem } from '@/db/schema';
 import { TYPE_LABELS } from '@/db/schema';
+import { updateItemStatus } from '@/lib/queue';
 
 function formatText(item: QueueItem): string {
   const header = `[${TYPE_LABELS[item.type]}]`;
@@ -33,33 +34,43 @@ function dataURLtoFile(dataURL: string, filename: string): File {
 export async function shareItem(item: QueueItem): Promise<boolean> {
   const text = formatText(item);
 
+  let shared = false;
+
   if (navigator.share && item.photos.length > 0) {
     try {
       const files = item.photos.map((p, i) => dataURLtoFile(p, `photo_${i + 1}.webp`));
       if (navigator.canShare?.({ files })) {
         await navigator.share({ text, files });
-        return true;
+        shared = true;
       }
     } catch {
-      return false;
+      // user cancelled
     }
   }
 
-  if (navigator.share) {
+  if (!shared && navigator.share) {
     try {
       await navigator.share({ text });
-      return true;
+      shared = true;
+    } catch {
+      // user cancelled
+    }
+  }
+
+  if (!shared) {
+    try {
+      await navigator.clipboard.writeText(text);
+      shared = true;
     } catch {
       return false;
     }
   }
 
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
+  if (shared && item.id) {
+    await updateItemStatus(item.id, 'sent');
   }
+
+  return shared;
 }
 
 export async function shareAllItems(items: QueueItem[]): Promise<boolean> {
@@ -67,6 +78,8 @@ export async function shareAllItems(items: QueueItem[]): Promise<boolean> {
   if (!pending.length) return false;
 
   const text = pending.map(formatText).join('\n\n---\n\n');
+
+  let shared = false;
 
   if (navigator.share) {
     try {
@@ -78,16 +91,22 @@ export async function shareAllItems(items: QueueItem[]): Promise<boolean> {
       } else {
         await navigator.share({ text });
       }
-      return true;
+      shared = true;
+    } catch {
+      // user cancelled share dialog — not an error
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(text);
+      shared = true;
     } catch {
       return false;
     }
   }
 
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
+  if (shared) {
+    await Promise.all(pending.map((item) => updateItemStatus(item.id!, 'sent')));
   }
+
+  return shared;
 }

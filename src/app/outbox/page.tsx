@@ -6,7 +6,9 @@ import OutboxCard from '@/components/OutboxCard';
 import { getQueueItems } from '@/lib/queue';
 import { shareAllItems } from '@/lib/share';
 import type { QueueItem, QueueItemStatus } from '@/db/schema';
-import { ArrowLeft, Send } from 'lucide-react';
+import { TYPE_LABELS } from '@/db/schema';
+import { ArrowLeft, Send, Grid3X3, List } from 'lucide-react';
+import Image from 'next/image';
 
 const TABS: { key: QueueItemStatus | 'all'; label: string }[] = [
   { key: 'all', label: '전체' },
@@ -20,12 +22,16 @@ export default function OutboxPage() {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [tab, setTab] = useState<QueueItemStatus | 'all'>('all');
   const [sending, setSending] = useState(false);
+  const [gridView, setGridView] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       const status = tab === 'all' ? undefined : tab;
-      setItems(await getQueueItems(status));
+      const result = await getQueueItems(status);
+      if (!cancelled) setItems(result);
     })();
+    return () => { cancelled = true; };
   }, [tab]);
 
   const handleShareAll = async () => {
@@ -50,6 +56,16 @@ export default function OutboxPage() {
             {items.length > 0 && (
               <span className="ml-auto text-xs text-steel">{items.length}개</span>
             )}
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setGridView(!gridView)}
+                className="p-1.5 rounded-lg text-steel hover:bg-surface transition-colors"
+                aria-label={gridView ? '리스트 보기' : '그리드 보기'}
+              >
+                {gridView ? <List size={18} /> : <Grid3X3 size={18} />}
+              </button>
+            )}
           </div>
           <div className="flex gap-1 bg-surface rounded-lg p-1">
             {TABS.map((t) => (
@@ -68,9 +84,35 @@ export default function OutboxPage() {
         </div>
       </div>
 
-      <div className="p-4 space-y-2 pb-24">
+      <div className={`p-4 pb-24 ${gridView ? '' : 'space-y-2'}`}>
         {items.length === 0 ? (
           <p className="text-center text-steel py-12">항목이 없습니다</p>
+        ) : gridView ? (
+          <div className="grid grid-cols-3 gap-1.5">
+            {items.map((item) => (
+              <div key={item.id} className="relative aspect-square rounded-lg overflow-hidden bg-black/5 group">
+                {item.photos[0] ? (
+                  <Image src={item.photos[0]} alt="" fill className="object-cover" sizes="33vw" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-steel text-sm">
+                    {item.type === 'rack' ? '🏗️' : item.type === 'freshness' ? '🔍' : '⏰'}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                {item.status === 'pending' && (
+                  <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-warning shadow" />
+                )}
+                {item.status === 'failed' && (
+                  <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-error shadow" />
+                )}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-[10px] text-white truncate">
+                    {item.type === 'timestamp' ? '타임스탬프' : TYPE_LABELS[item.type]}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           items.map((item) => <OutboxCard key={item.id} item={item} onRefresh={() => setTab('all')} />)
         )}
