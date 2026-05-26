@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Wifi,
   WifiOff,
+  QrCode,
 } from 'lucide-react';
 
 const CORE_ITEMS: { key: string; icon: React.ReactNode; label: string; desc: string; route: string }[] = [
@@ -30,6 +31,7 @@ const CORE_ITEMS: { key: string; icon: React.ReactNode; label: string; desc: str
 const SUB_ITEMS: { key: string; icon: React.ReactNode; label: string; desc: string; route: string }[] = [
   { key: 'attendance', icon: <Clock size={22} />, label: '출퇴근', desc: '출근/퇴근 기록', route: '/work/attendance' },
   { key: 'accounts', icon: <Key size={22} />, label: '계정 등록', desc: 'QR 로그인 관리', route: '/accounts' },
+  { key: 'qr-scrap', icon: <QrCode size={22} />, label: '불용로케이션 QR', desc: 'QR 코드 생성', route: '/qr-scrap' },
 ];
 
 type Summary = Record<QueueItemStatus, number>;
